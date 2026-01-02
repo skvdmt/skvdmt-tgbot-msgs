@@ -1,0 +1,67 @@
+name: Integration and Deploy
+on:
+  push:
+    paths-ignore:
+      - './.github/workflows/*'
+      - '*.md'
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+  deployment:
+    needs: [integration]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH connection
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          sudo chmod 600 ~/.ssh/id_rsa
+          echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{secrets.SSH_PRIVATE_KEY}}
+          SSH_KNOWN_HOSTS: ${{secrets.SSH_KNOWN_HOSTS}}
+      - name: Connect on SSH to server, pull and run application
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{secrets.SSH_USER}}@${{secrets.SSH_HOST}} <<EOF
+            docker pull ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+            docker stop skvdmt-tgbot-msgs || true
+            docker rm skvdmt-tgbot-msgs || true
+            docker create \
+              --network=skvdmt \
+              --name skvdmt-tgbot-msgs \
+              -e DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              --restart unless-stopped \
+              ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+            mkdir -p ~/migrations ~/migrations/skvdmt-tgbot-msgs
+            docker cp skvdmt-tgbot-msgs:/usr/src/skvdmt-tgbot-msgs/schema/. /home/dima/migrations/skvdmt-tgbot-msgs
+            docker run --rm \
+              --network=skvdmt \
+              --name migration \
+              -v "/home/dima/migrations/skvdmt-tgbot-msgs:/migrations" \
+              migrate/migrate:latest \
+                -path /migrations \
+                -database 'postgres://${{ vars.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ vars.POSTGRES_DB }}?sslmode=disable' \
+                up
+            docker start skvdmt-tgbot-msgs
+          EOF
+          rm -f ~/.ssh/id_rsa
+          rm -f ~/.ssh/known_hosts
