@@ -17,6 +17,7 @@ FROM preper AS builder
 RUN go build -v -o /usr/local/bin/${NAME} ./cmd/main.go
 
 FROM alpine AS release
+ARG NAME
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 RUN mkdir -p /var/log/${NAME}
