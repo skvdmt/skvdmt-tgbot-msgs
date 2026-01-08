@@ -25,8 +25,6 @@ type Usecase interface {
 		update *entities.Update) (configs.RequestConfig, error)
 	// Оптиизация реестра пользователей.
 	OptimizeUserRegistry(ctx context.Context) error
-	// Очистка реестра пользователей в базе данных.
-	CleanUsersRegistryDatabase(ctx context.Context) error
 	// Получение пользователя.
 	User(ctx context.Context, telegramUserId int) (*entities.User, error)
 }

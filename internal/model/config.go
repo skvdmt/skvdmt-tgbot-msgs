@@ -16,12 +16,11 @@ const (
 
 // Timers Конфигурация временных интервалов.
 type Timers struct {
-	OptimizeUserRegistryInterval       int    `yaml:"optimize-user-registry-interval"`
-	CleanUsersRegistryDatabaseInterval int    `yaml:"clean-users-registry-database-interval"`
-	SendMessageCooldown                int    `yaml:"send-message-cooldown"`
-	AuthCooldown                       int    `yaml:"auth-cooldown"`
-	DbCleanInterval                    string `yaml:"db-clean-interval"`
-	UsedTimeout                        int    `yaml:"used-timeout"`
+	OptimizeUserRegistryInterval int    `yaml:"optimize-user-registry-interval"`
+	SendMessageCooldown          int    `yaml:"send-message-cooldown"`
+	AuthCooldown                 int    `yaml:"auth-cooldown"`
+	DbCleanInterval              string `yaml:"db-clean-interval"`
+	UsedTimeout                  int    `yaml:"used-timeout"`
 }
 
 // Postgres Конфигурация соединения с postgres.

@@ -30,7 +30,7 @@ type User struct {
 	telegramUserId int
 
 	// Имя пользователя в телеграм.
-	username string
+	telegramUsername string
 
 	// Авторизован.
 	authorized bool
@@ -71,9 +71,9 @@ func (u *User) SetMessageCreatedAt(messageCreatedAt time.Time) {
 	u.messageCreatedAt = messageCreatedAt
 }
 
-// SetUsername Установка имени пользователя.
-func (u *User) SetUsername(username string) {
-	u.username = username
+// SetTelegramUsernameUsername Установка имени пользователя телеграм.
+func (u *User) SetTelegramUsername(username string) {
+	u.telegramUsername = username
 }
 
 // Authorized
@@ -89,6 +89,11 @@ func (u *User) BotWant() int {
 // TelegramUserId Идентификатор пользователя телеграм.
 func (u *User) TelegramUserId() int {
 	return u.telegramUserId
+}
+
+// TelegramUsername Имя пользователя телеграм.
+func (u *User) TelegramUsername() string {
+	return u.telegramUsername
 }
 
 // MessageCreatedAt Время отправки последнего сообщения.

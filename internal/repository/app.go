@@ -5,18 +5,15 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
-	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/model"
 )
 
 const (
-	DB_PASSWORD     = "DB_PASSWORD"
-	uniqueViolation = "unique_violation"
+	DB_PASSWORD = "DB_PASSWORD"
 )
 
 // App Репозиторный слой.
@@ -51,10 +48,15 @@ func (a *App) Stop(ctx context.Context) error {
 }
 
 // SaveMessage Сохранение сообщения.
-func (a *App) SaveMessage(ctx context.Context, telegramUserId int, text string) error {
+func (a *App) SaveMessage(
+	ctx context.Context,
+	telegramUserId int,
+	telegramUserName string,
+	text string,
+) error {
 	_, err := a.db.ExecContext(ctx,
-		`INSERT INTO messages (user_id, message) VALUES ($1, $2);`,
-		telegramUserId, text)
+		`INSERT INTO messages (telegram_user_id, telegram_user_name, message) VALUES ($1, $2, $3);`,
+		telegramUserId, a.nullString(telegramUserName), text)
 	if err != nil {
 		return err
 	}
@@ -62,69 +64,11 @@ func (a *App) SaveMessage(ctx context.Context, telegramUserId int, text string) 
 	return nil
 }
 
-// User получение времени создания последнего сообщения пользователем
+// UserMessageCreatedAt получение времени создания последнего сообщения пользователем
 func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*time.Time, error) {
 	mcat := time.Time{}
-	query := `SELECT message_created_at FROM users WHERE telegram_user_id = $1`
-	if err := a.db.QueryRowContext(ctx, query, telegramUserId).Scan(&mcat); err != nil {
-		return nil, err
-	}
-	return &mcat, nil
-}
-
-// DumpUsers Свалка пользователей.
-func (a *App) DumpUsers(ctx context.Context, users map[int]*entities.User) error {
-	var wg sync.WaitGroup
-	for _, v := range users {
-		wg.Add(1)
-		go func() {
-			_, err := a.db.ExecContext(ctx,
-				`INSERT INTO users (telegram_user_id, message_created_at) VALUES ($1, $2)`,
-				v.TelegramUserId(), v.MessageCreatedAt(),
-			)
-			if err != nil {
-				if err, ok := err.(*pq.Error); ok {
-					// duplicate key value violates unique constraint
-					if err.Code.Name() == uniqueViolation {
-						_, err2 := a.db.ExecContext(ctx,
-							`UPDATE users SET message_created_at = $1, updated_at = now() WHERE telegram_user_id = $2`,
-							v.MessageCreatedAt(),
-							v.TelegramUserId(),
-						)
-						if err2 != nil {
-							model.Errors <- err2
-						}
-						wg.Done()
-						return
-					}
-				}
-				model.Errors <- err
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-	model.Logs.Info.Info("dump user registry complete")
-	return nil
-}
-
-// CleanUsersDB Очистка реестра пользователей в базе данных.
-func (a *App) CleanUsersRegistry(ctx context.Context) error {
-	_, err := a.db.ExecContext(ctx,
-		fmt.Sprintf("DELETE FROM users WHERE updated_at < (now() - '%s'::interval)",
-			model.Config.Timers.DbCleanInterval))
-	if err != nil {
-		return err
-	}
-	model.Logs.Info.Info("user registry cleaning complete")
-	return nil
-}
-
-// GetMessageCreatedAt Получение времени создания последнего сообщения пользователем.
-func (a *App) GetMessageCreatedAt(ctx context.Context, telegramUserId int) (*time.Time, error) {
-	var mcat time.Time
 	if err := a.db.QueryRowContext(ctx,
-		`SELECT message_created_at FROM users WHERE telegram_user_id = $1`,
+		`SELECT created_at FROM messages WHERE telegram_user_id = $1 ORDER BY created_at DESC LIMIT 1`,
 		telegramUserId).Scan(&mcat); err != nil {
 		return nil, err
 	}
@@ -149,4 +93,15 @@ func (a *App) openDB() (*sql.DB, error) {
 	}
 	model.Logs.Info.Info("connect to database success")
 	return db, nil
+}
+
+// nullString Преобразует строку в тип sql.NullString.
+func (a *App) nullString(value string) *sql.NullString {
+	if len(value) > 0 {
+		return &sql.NullString{
+			String: value,
+			Valid:  true,
+		}
+	}
+	return &sql.NullString{}
 }

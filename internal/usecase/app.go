@@ -21,10 +21,6 @@ const (
 	cmdAuth = "/auth"
 	// Команда на запрос отправки сообщания.
 	cmdMessage = "/message"
-	// // Имя бота.
-	// botName = "skidanovdima_msgs_bot"
-	// // Адрес страницы с оставленными сообщениями.
-	// msgsUrl = "https://msgs.skvdmt.ru/"
 	// Текст ошибки пользователь уже авторизован.
 	ErrAlreadyAuthorized = "user already authorized"
 	// Текст ошибки поптки авторизации закончились.
@@ -146,7 +142,10 @@ func (a *App) MessageHandle(ctx context.Context,
 			return nil, fmt.Errorf("message are saved")
 		}
 	}
-	if err := a.repository.SaveMessage(ctx, user.TelegramUserId(), update.Message.Text); err != nil {
+	if err := a.repository.SaveMessage(ctx,
+		user.TelegramUserId(),
+		user.TelegramUsername(),
+		update.Message.Text); err != nil {
 		return nil, err
 	}
 	user.SetMessageCreatedAt(time.Now())
@@ -157,24 +156,16 @@ func (a *App) MessageHandle(ctx context.Context,
 
 // OptimizeUserRegistry Оптиизация реестра пользователей.
 func (a *App) OptimizeUserRegistry(ctx context.Context) error {
-	saving := make(map[int]*entities.User)
 	fresh := make(map[int]*entities.User)
 	for k, v := range a.users.List() {
 		if time.Until(v.LastUsedAt())+
-			time.Minute*time.Duration(model.Config.Timers.UsedTimeout) <= 0 {
-			saving[k] = v
-			continue
+			time.Minute*time.Duration(model.Config.Timers.UsedTimeout) > 0 {
+			fresh[k] = v
 		}
-		fresh[k] = v
 	}
 	a.users.SetList(fresh)
 	model.Logs.Info.Info("optimize user registry complete")
-	return a.repository.DumpUsers(ctx, saving)
-}
-
-// CleanUsersRegistryDatabase Очистка реестра пользователей в базе данных.
-func (a *App) CleanUsersRegistryDatabase(ctx context.Context) error {
-	return a.repository.CleanUsersRegistry(ctx)
+	return nil
 }
 
 // User Получение пользователя.

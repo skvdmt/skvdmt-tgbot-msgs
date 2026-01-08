@@ -27,8 +27,6 @@ type App struct {
 	users *entities.UserRegistry
 	// Раннер оптимизации реестра пользователей.
 	optimizeUserRegistry *time.Ticker
-	// Раннер очистки базы данных реестра пользователей.
-	cleanUsersRegistryDatabase *time.Ticker
 }
 
 // NewApp Конструктор.
@@ -40,8 +38,6 @@ func NewApp(users *entities.UserRegistry) (*App, error) {
 		users:   users,
 		optimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
-		cleanUsersRegistryDatabase: time.NewTicker(time.Minute *
-			time.Duration(model.Config.Timers.CleanUsersRegistryDatabaseInterval)),
 	}
 	var err error
 	// Создание клиента для запросов к Telegram Bot API.
@@ -107,10 +103,6 @@ func (a *App) cleaner(ctx context.Context) {
 			if err := a.usecase.OptimizeUserRegistry(ctx); err != nil {
 				model.Errors <- err
 			}
-		case <-a.cleanUsersRegistryDatabase.C:
-			if err := a.usecase.CleanUsersRegistryDatabase(ctx); err != nil {
-				model.Errors <- err
-			}
 		}
 	}
 }
@@ -122,7 +114,7 @@ func (a *App) updateHandle(ctx context.Context, update *entities.Update) error {
 	if err != nil {
 		return err
 	}
-	user.SetUsername(update.Message.From.Username)
+	user.SetTelegramUsername(update.Message.From.Username)
 
 	// Получение конфигурации запроса к телеграм боту,
 	// чтобы дать отвера на запрос пользователя.
