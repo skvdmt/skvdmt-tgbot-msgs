@@ -1,0 +1,29 @@
+# Максимальное количество попыток аутентификации
+default-max-auth-attempts: 3
+# Имя бота.
+bot-name: skidanovdima_msgs_bot
+# Адрес страницы с оставленными сообщениями.
+msgs-url: https://msgs.skvdmt.ru/
+timers:
+  # Интервал оптимизации реестра пользователей.
+  optimize-user-registry-interval: 5
+  # Интервал очистки базы данных реестра пользователей.
+  clean-users-registry-database-interval: 60
+  # Время восстановления отправки сообщения.
+  send-message-cooldown: 1440
+  # Время восстановления новых попыток аутентификации.
+  auth-cooldown: 15
+  # Пользователи старше этого интервала будут удалятся из базы данных.
+  db-clean-interval: 24 hours
+  # Время простоя пользователя перед переносом из реестра в базу данных.
+  used-timeout: 15
+postgres:
+  host: db
+  port: 5432
+  user: postgres
+  database: skvdmt_ru
+fonts:
+  - OpenSans-BoldItalic.ttf
+  - Oswald-Bold.ttf
+  - Go-Bold.ttf
+  - RobotoMono-BoldItalic.ttf

@@ -1,4 +1,4 @@
-package params
+package configs
 
 import (
 	"encoding/json"
@@ -14,11 +14,13 @@ const (
 	timeout          = "timeout"
 	allowedUpdates   = "allowed_updates"
 	methodGetUpdates = "getUpdates"
-	updateTimeout    = 10
-	urlEncoded       = "application/x-www-form-urlencoded"
+
+	defaultUpdateTimeout = 1
+	defaultUpdateLimit   = 1
+	urlEncoded           = "application/x-www-form-urlencoded"
 )
 
-// Getupdates конфигурация тела запроса на получение обновления
+// Getupdates Конфигурация запроса на получение обновлений.
 type GetUpdates struct {
 	Limit          int
 	Offset         int
@@ -26,9 +28,12 @@ type GetUpdates struct {
 	AllowedUpdates []string
 }
 
-// NewGetUpdates конструктор
+// NewGetUpdates Конструктор.
 func NewGetUpdates() *GetUpdates {
-	return &GetUpdates{Timeout: updateTimeout}
+	return &GetUpdates{
+		Timeout: defaultUpdateTimeout,
+		Limit:   defaultUpdateLimit,
+	}
 }
 
 // Method
@@ -61,4 +66,8 @@ func (g *GetUpdates) Body() (io.Reader, error) {
 // ContentType
 func (g *GetUpdates) ContentType() string {
 	return urlEncoded
+}
+
+// SetChatId empty
+func (g *GetUpdates) SetChatId(chatId int) {
 }

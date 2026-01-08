@@ -1,4 +1,4 @@
-package params
+package configs
 
 import (
 	"io"
@@ -17,16 +17,15 @@ const (
 
 // SendMessage params for send message request
 type SendMessage struct {
-	ChatId           int
+	chatId           int
 	ReplyToMessageID int
 	Text             string
 }
 
 // NewSendMessage конструктор
-func NewSendMessage(chatId int, text string) *SendMessage {
+func NewSendMessage(text string) *SendMessage {
 	return &SendMessage{
-		ChatId: chatId,
-		Text:   text,
+		Text: text,
 	}
 }
 
@@ -38,7 +37,7 @@ func (s *SendMessage) Method() string {
 // Body
 func (s *SendMessage) Body() (io.Reader, error) {
 	v := &url.Values{}
-	v.Set(chatId, strconv.Itoa(s.ChatId))
+	v.Set(chatId, strconv.Itoa(s.chatId))
 	if s.ReplyToMessageID > 0 {
 		v.Set(replyToMessageID, strconv.Itoa(s.ReplyToMessageID))
 	}
@@ -49,4 +48,9 @@ func (s *SendMessage) Body() (io.Reader, error) {
 // ContentType
 func (s *SendMessage) ContentType() string {
 	return urlEncoded
+}
+
+// SetChatId
+func (s *SendMessage) SetChatId(chatId int) {
+	s.chatId = chatId
 }

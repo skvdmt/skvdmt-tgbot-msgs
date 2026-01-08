@@ -33,17 +33,17 @@ services:
         "up",
       ]
   skvdmt-tgbot-msgs:
-    build: .
+    build:
+      context: .
+      args:
+        - MODE=${MODE}
     container_name: skvdmt-tgbot-msgs
     depends_on:
       migrate:
         condition: service_completed_successfully
     environment:
-      MODE: dev
+      MODE: ${MODE}
       TGBOT_TOKEN: ${TGBOT_TOKEN}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ./build:/usr/local/bin
-      - ./fonts:/usr/local/share/fonts
 volumes:
   pgdata:

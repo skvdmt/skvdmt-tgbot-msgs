@@ -1,4 +1,4 @@
-package params
+package configs
 
 import (
 	"bytes"
@@ -23,9 +23,8 @@ type SendCaptcha struct {
 }
 
 // NewSendCaptcha конструктор
-func NewSendCaptcha(chatId int, caption string, captcha []byte) *SendCaptcha {
+func NewSendCaptcha(caption string, captcha []byte) *SendCaptcha {
 	return &SendCaptcha{
-		chatId:  chatId,
 		caption: caption,
 		captcha: captcha,
 	}
@@ -71,4 +70,9 @@ func (s *SendCaptcha) Body() (io.Reader, error) {
 // ContentType
 func (s *SendCaptcha) ContentType() string {
 	return s.contentType
+}
+
+// SetChatId
+func (s *SendCaptcha) SetChatId(chatId int) {
+	s.chatId = chatId
 }

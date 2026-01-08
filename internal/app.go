@@ -8,82 +8,101 @@ import (
 	"syscall"
 
 	_ "github.com/lib/pq"
+	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/delivery"
+	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/model"
 )
 
-// App appliocation struct
+// App Основная структура приложения.
 type App struct {
-	exit      chan os.Signal
-	bot       *Bot
-	cancelBot context.CancelFunc
-	correct   *sync.WaitGroup
+	// Канал сигналов операционной системы
+	// для остановки ресурсов.
+	exit chan os.Signal
+	// Ресурсы.
+	sources *sync.WaitGroup
+	// Функция отмены контекста всего приложения.
+	cancel context.CancelFunc
+	// Реестр пользователей.
+	users *entities.UserRegistry
+	// Транспортный слой.
+	delivery Delivery
 }
 
-// NewApp constructor
+// NewApp Конструктор.
 func NewApp() (*App, error) {
-	model.Errors = make(chan error)
-	return &App{
+	model.Logs.Info.Info("telegram bot application creating")
+	a := &App{
 		exit:    make(chan os.Signal),
-		correct: &sync.WaitGroup{},
-	}, nil
+		sources: &sync.WaitGroup{},
+	}
+	var err error
+	// Загрузка конфигурации.
+	if err = model.LoadConfig(); err != nil {
+		return nil, err
+	}
+	// Создание реестра пользователей.
+	if a.users, err = entities.NewUserRegistry(); err != nil {
+		return nil, err
+	}
+	// Создание транспортного слоя из которого по
+	// цепочки создаются остальные слои приложения.
+	if a.delivery, err = delivery.NewApp(a.users); err != nil {
+		return nil, err
+	}
+	return a, nil
 }
 
-// Start application run
+// Start Запуск приложения.
 func (a *App) Start() error {
-	a.correct.Add(1)
+	model.Logs.Info.Info("telegram bot application running")
+	// Создане глобального канала ошибок для всего приложения.
+	model.Errors = make(chan error)
+	// Создание контекста.
+	var ctx context.Context
+	ctx, a.cancel = context.WithCancel(context.Background())
+	model.Logs.Info.Info("app context created")
+	// Начало работы ресурса приложения.
+	a.sources.Add(1)
 	go func() {
-		// async bot starting
-		model.Logs.Info.Info("skidanovdima_msgs_bot starting")
 		var err error
-		if err = model.PostgressConnect(); err != nil {
+		if err = a.delivery.Start(ctx); err != nil {
 			model.Errors <- err
 		}
-		var ctx context.Context
-		ctx, a.cancelBot = context.WithCancel(context.Background())
-		a.bot, err = NewBot(ctx)
-		if err != nil {
-			model.Errors <- err
-		}
-		if err := a.bot.Start(ctx); err != nil {
-			model.Errors <- err
-		}
-		a.correct.Done()
+		// Завершение работы ресурса приложения.
+		a.sources.Done()
 	}()
 
-	go a.signalHandling()
+	go a.signalHandling(ctx)
 	return a.errorHandling()
 }
 
-// signalHandling os signal handling
-func (a *App) signalHandling() {
+// signalHandling Отслеживание сигналов операционной системы.
+func (a *App) signalHandling(ctx context.Context) {
 	signal.Notify(a.exit, syscall.SIGTERM)
 	<-a.exit
-	model.Errors <- a.close()
+	model.Errors <- a.stop(ctx)
 }
 
-// errorHandling error handling
+// errorHandling Обработка канала ошибок.
 func (a *App) errorHandling() error {
 	err := <-model.Errors
 	close(model.Errors)
 	return err
 }
 
-// stop correct stop application
-func (a *App) close() error {
-	// stop bot
-	if err := a.bot.Stop(); err != nil {
+// stop Остановка.
+func (a *App) stop(ctx context.Context) error {
+	// Остановка транспортного слоя из которо по цепочке
+	// останавливаются всех остальные слои.
+	if err := a.delivery.Stop(ctx); err != nil {
 		return err
 	}
-	// close exit channel
+	// Ожидание завершения работы ресурсов приложения.
+	a.sources.Wait()
+	// Закрытие канала отслеживающего сигналы операционной системы.
 	close(a.exit)
-	// waiting correct stop
-	a.correct.Wait()
-	// cancel bot context
-	a.cancelBot()
-	// close database connection
-	if err := model.DB.Close(); err != nil {
-		return err
-	}
+	// Отмена контекста.
+	a.cancel()
 	model.Logs.Info.Info("skidanovdima_msgs_bot stopped")
 	return nil
 }

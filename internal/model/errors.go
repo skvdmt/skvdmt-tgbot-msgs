@@ -1,4 +1,4 @@
 package model
 
-// Errors глобальный канал ошибок приложения
+// Errors Глобальный канал ошибок приложения.
 var Errors chan error

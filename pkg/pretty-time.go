@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// PrettyTime good time format string
+// PrettyTime Форматирует промежуток времени в строку с описанием.
 func PrettyTime(t time.Duration) string {
 	d := t.Round(time.Second)
 	h := d / time.Hour
@@ -19,14 +19,14 @@ func PrettyTime(t time.Duration) string {
 	}
 	return strings.TrimSpace(fmt.Sprintf(
 		"%s%s%s",
-		prettyTimeSection(h, "hour"),
-		prettyTimeSection(m, "minute"),
-		prettyTimeSection(s, "second"),
+		prettyTimeEdit(h, "hour"),
+		prettyTimeEdit(m, "minute"),
+		prettyTimeEdit(s, "second"),
 	))
 }
 
-// prettyTimeSection section time as string
-func prettyTimeSection(value time.Duration, section string) string {
+// prettyTimeEdit Редактирует описание форматирования.
+func prettyTimeEdit(value time.Duration, section string) string {
 	switch value {
 	case 0:
 		return ""

@@ -7,23 +7,24 @@ import (
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/model"
 )
 
+// Точка входа в приложение.
 func main() {
-	// making logger
+	// Создание логгера.
 	if err := model.LoadLogger(); err != nil {
 		panic(err)
 	}
-	// making app
+	// Создание приложения.
 	a, err := internal.NewApp()
 	if err != nil {
 		model.Logs.Error.Error(err.Error())
 		os.Exit(1)
 	}
-	// starting app
+	// Запуск приложения.
 	if err := a.Start(); err != nil {
 		model.Logs.Error.Error(err.Error())
 		os.Exit(1)
 	}
-	// close error log file
+	// Закрытие логгера.
 	if err := model.Logs.Close(); err != nil {
 		panic(err)
 	}
