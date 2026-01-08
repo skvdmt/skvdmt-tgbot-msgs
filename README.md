@@ -17,9 +17,21 @@ The bot performs authorization by analyzing the characters entered from the imag
 ```sh
 git clone https://github.com/skvdmt/skvdmt-tgbot-msgs .
 ```
+
 # Download docker image
 ```sh
 docker pull skvdmt/skvdmt-tgbot-msgs
+```
+
+# Run in docker container
+```sh
+docker run -d \
+  --name msgs \
+  --env MODE=prod \
+  --env TGBOT_TOKEN=bot_token \
+  --env DB_PASSWORD=postgres_password \
+  --restart unless-stopped \
+  skvdmt/skvdmt-tgbot-msgs
 ```
 
 ## Environment variable requirements:

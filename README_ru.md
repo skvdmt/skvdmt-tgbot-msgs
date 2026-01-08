@@ -21,6 +21,17 @@ git clone https://github.com/skvdmt/skvdmt-tgbot-msgs .
 docker pull skvdmt/skvdmt-tgbot-msgs
 ```
 
+# Запустить в docker контейнере
+```sh
+docker run -d \
+  --name msgs \
+  --env MODE=prod \
+  --env TGBOT_TOKEN=bot_token \
+  --env DB_PASSWORD=postgres_password \
+  --restart unless-stopped \
+  skvdmt/skvdmt-tgbot-msgs
+```
+
 ## Требования переменных окружения:
 
 для приложения:
