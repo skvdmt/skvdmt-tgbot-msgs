@@ -1,6 +1,5 @@
 FROM golang:alpine AS preper
 ARG NAME
-ENV APP=${NAME}
 WORKDIR /usr/src/${NAME}
 COPY go.mod go.sum ./
 RUN go mod download
@@ -18,6 +17,7 @@ FROM preper AS builder
 RUN go build -v -o /usr/local/bin/${NAME} ./cmd/main.go
 
 FROM alpine AS release
+ENV APP=${NAME}
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 RUN mkdir -p /var/log/${NAME}
@@ -26,4 +26,4 @@ COPY ./config /etc/${NAME}
 COPY ./fonts /usr/local/share/fonts
 WORKDIR /usr/local/bin
 COPY --from=builder /usr/local/bin/${NAME} ./${NAME}
-ENTRYPOINT echo $APP
+ENTRYPOINT [echo $APP]
