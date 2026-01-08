@@ -41,6 +41,7 @@ jobs:
               --network=host \
               --target=testing \
               --output=type=docker \
+              --build-arg MODE=$MODE \
               --no-cache \
               --tag ${{github.repository}}:testing .
             docker rmi ${{github.repository}}:testing
