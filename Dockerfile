@@ -6,12 +6,10 @@ COPY . .
 RUN mkdir -p /etc/skvdmt-tgbot-msgs
 COPY ./config /etc/skvdmt-tgbot-msgs
 COPY ./fonts /usr/local/share/fonts
-ARG MODE
-ENV MODE=${MODE}
 
 FROM preper AS testing
 ARG MODE
-ENV MODE=${MODE}
+ENV MODE=$MODE
 RUN go test --tags=unit -v ./...
 
 FROM preper AS builder
