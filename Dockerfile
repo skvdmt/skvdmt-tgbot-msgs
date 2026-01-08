@@ -8,8 +8,8 @@ COPY ./config /etc/skvdmt-tgbot-msgs
 COPY ./fonts /usr/local/share/fonts
 
 FROM preper AS testing
-ARG MODE
-ENV MODE=$MODE
+ARG MODE=local
+ENV MODE=${MODE}
 RUN go test --tags=unit -v ./...
 
 FROM preper AS builder
