@@ -27,7 +27,7 @@ jobs:
             docker run --rm \
               --network=skvdmt \
               --name migration \
-              -v "/home/dima/src/${{ github.event.repository.name }}/schema:/migrations" \
+              --volume /home/dima/src/${{ github.event.repository.name }}/schema:/migrations \
               migrate/migrate:latest \
                 -path /migrations \
                 -database 'postgres://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}?sslmode=disable' \
@@ -41,7 +41,7 @@ jobs:
               --network=host \
               --target=testing \
               --output=type=docker \
-              --build-arg MODE=prod \
+              --build-arg MODE=${{ vars.MODE }} \
               --no-cache \
               --tag ${{github.repository}}:testing .
             docker rmi ${{github.repository}}:testing
@@ -83,7 +83,8 @@ jobs:
             docker run -d \
               --network=skvdmt \
               --name ${{ github.event.repository.name }} \
-              --env MODE=prod \
+              --env MODE=${{ vars.MODE }} \
+              --volume /home/dima/logs/${{ github.event.repository.name }}:/var/log/${{ github.event.repository.name }}
               --restart unless-stopped \
               ${{github.repository}}
           EOF
