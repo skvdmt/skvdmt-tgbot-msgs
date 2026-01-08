@@ -1,5 +1,6 @@
 FROM golang:alpine AS preper
 ARG NAME
+ENV APP=${NAME}
 WORKDIR /usr/src/${NAME}
 COPY go.mod go.sum ./
 RUN go mod download
@@ -25,4 +26,4 @@ COPY ./config /etc/${NAME}
 COPY ./fonts /usr/local/share/fonts
 WORKDIR /usr/local/bin
 COPY --from=builder /usr/local/bin/${NAME} ./${NAME}
-ENTRYPOINT [echo ${NAME}]
+ENTRYPOINT [echo $APP]
