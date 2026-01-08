@@ -37,12 +37,11 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa ${{secrets.SSH_USER}}@${{secrets.SSH_HOST}} <<EOF
             cd ~/src/${{ github.event.repository.name }}
-            echo $MODE
             docker buildx build \
               --network=host \
               --target=testing \
               --output=type=docker \
-              --build-arg MODE=bla \
+              --build-arg MODE=prod \
               --no-cache \
               --tag ${{github.repository}}:testing .
             docker rmi ${{github.repository}}:testing
