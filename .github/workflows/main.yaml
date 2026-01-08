@@ -85,6 +85,7 @@ jobs:
               --name ${{ github.event.repository.name }} \
               --env MODE=${{ vars.MODE }} \
               --env TGBOT_TOKEN=${{ secrets.TGBOT_TOKEN }} \
+              --env DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}\
               --volume /home/dima/logs/${{ github.event.repository.name }}:/var/log/${{ github.event.repository.name }} \
               --restart unless-stopped \
               ${{github.repository}}
