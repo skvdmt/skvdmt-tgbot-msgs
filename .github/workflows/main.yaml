@@ -83,6 +83,7 @@ jobs:
             docker run -d \
               --network=skvdmt \
               --name ${{ github.event.repository.name }} \
+              --env MODE=prod \
               --restart unless-stopped \
               ${{github.repository}}
           EOF
