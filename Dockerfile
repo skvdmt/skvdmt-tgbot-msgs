@@ -18,7 +18,6 @@ RUN go build -v -o /usr/local/bin/${NAME} ./cmd/main.go
 
 FROM alpine AS release
 ARG NAME
-ENV APP=${NAME}
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 RUN mkdir -p /var/log/${NAME}
@@ -27,4 +26,4 @@ COPY ./config /etc/${NAME}
 COPY ./fonts /usr/local/share/fonts
 WORKDIR /usr/local/bin
 COPY --from=builder /usr/local/bin/${NAME} ./${NAME}
-ENTRYPOINT [echo ${APP}]
+ENTRYPOINT ["skvdmt-tgbot-msgs"]
