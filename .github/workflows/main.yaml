@@ -41,6 +41,7 @@ jobs:
               --network=host \
               --target=testing \
               --output=type=docker \
+              --build-arg NAME=${{ github.event.repository.name }} \
               --build-arg MODE=${{ vars.MODE }} \
               --no-cache \
               --tag ${{github.repository}}:testing .
@@ -51,6 +52,7 @@ jobs:
           ssh -i ~/.ssh/id_rsa ${{secrets.SSH_USER}}@${{secrets.SSH_HOST}} <<EOF
             cd ~/src/${{ github.event.repository.name }}
             docker build \
+             --build-arg NAME=${{ github.event.repository.name }} \
              --no-cache \
              --tag ${{github.repository}} .
             docker push ${{github.repository}}

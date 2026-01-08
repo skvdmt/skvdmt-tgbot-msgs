@@ -1,11 +1,12 @@
 FROM golang:alpine AS preper
-WORKDIR /usr/src/skvdmt-tgbot-msgs
+ARG NAME
+WORKDIR /usr/src/${NAME}
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN mkdir -p /var/log/skvdmt-tgbot-msgs
-RUN mkdir -p /etc/skvdmt-tgbot-msgs
-COPY ./config /etc/skvdmt-tgbot-msgs
+RUN mkdir -p /var/log/${NAME}
+RUN mkdir -p /etc/${NAME}
+COPY ./config /etc/${NAME}
 COPY ./fonts /usr/local/share/fonts
 
 FROM preper AS testing
@@ -13,15 +14,15 @@ ARG MODE
 RUN go test --tags=unit -v ./...
 
 FROM preper AS builder
-RUN go build -v -o /usr/local/bin/skvdmt-tgbot-msgs ./cmd/main.go
+RUN go build -v -o /usr/local/bin/${NAME} ./cmd/main.go
 
 FROM alpine AS release
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Moscow /etc/localtime
-RUN mkdir -p /var/log/skvdmt-tgbot-msgs
-RUN mkdir -p /etc/skvdmt-tgbot-msgs
-COPY ./config /etc/skvdmt-tgbot-msgs
+RUN mkdir -p /var/log/${NAME}
+RUN mkdir -p /etc/${NAME}
+COPY ./config /etc/${NAME}
 COPY ./fonts /usr/local/share/fonts
 WORKDIR /usr/local/bin
-COPY --from=builder /usr/local/bin/skvdmt-tgbot-msgs ./skvdmt-tgbot-msgs
-ENTRYPOINT ["skvdmt-tgbot-msgs"]
+COPY --from=builder /usr/local/bin/${NAME} ./${NAME}
+ENTRYPOINT [${NAME}]
