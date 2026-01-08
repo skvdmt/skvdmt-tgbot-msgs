@@ -41,7 +41,7 @@ jobs:
               --network=host \
               --target=testing \
               --output=type=docker \
-              --build-arg MODE=prod \
+              --build-arg MODE=$MODE \
               --no-cache \
               --tag ${{github.repository}}:testing .
             docker rmi ${{github.repository}}:testing
@@ -84,7 +84,6 @@ jobs:
               --network=skvdmt \
               --name ${{ github.event.repository.name }} \
               --restart unless-stopped \
-              --publish 8000:8000 \
               ${{github.repository}}
           EOF
       - name: Remove ssh connection.
