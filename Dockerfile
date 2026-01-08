@@ -26,4 +26,4 @@ COPY ./config /etc/${NAME}
 COPY ./fonts /usr/local/share/fonts
 WORKDIR /usr/local/bin
 COPY --from=builder /usr/local/bin/${NAME} ./${NAME}
-ENTRYPOINT [echo $APP]
+ENTRYPOINT echo $APP
