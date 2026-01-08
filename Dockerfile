@@ -3,6 +3,7 @@ WORKDIR /usr/src/skvdmt-tgbot-msgs
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+RUN mkdir -p /var/log/skvdmt-tgbot-msgs
 RUN mkdir -p /etc/skvdmt-tgbot-msgs
 COPY ./config /etc/skvdmt-tgbot-msgs
 COPY ./fonts /usr/local/share/fonts
