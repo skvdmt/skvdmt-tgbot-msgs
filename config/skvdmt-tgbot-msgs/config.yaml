@@ -16,10 +16,10 @@ timers:
   # Время простоя пользователя перед переносом из реестра в базу данных.
   used-timeout: 15
 postgres:
-  host: db
+  host: postgres
   port: 5432
-  user: postgres
-  database: tgbot_msgs
+  user: dima
+  database: skvdmt-tgbot-msgs
 fonts:
   - OpenSans-BoldItalic.ttf
   - Oswald-Bold.ttf

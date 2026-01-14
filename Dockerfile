@@ -1,29 +1,35 @@
+# Подготовка.
 FROM golang:alpine AS preper
 ARG NAME
 WORKDIR /usr/src/${NAME}
-COPY go.mod go.sum ./
-RUN go mod download
 COPY . .
-RUN mkdir -p /var/log/${NAME}
-RUN mkdir -p /etc/${NAME}
-COPY ./config /etc/${NAME}
+COPY ./config /etc
 COPY ./fonts /usr/local/share/fonts
+RUN go mod download
 
+# Тестирование.
 FROM preper AS testing
-ARG MODE
+ARG DB_PASSWORD
 RUN go test --tags=unit -v ./...
+RUN go test --tags=integration -v ./...
+RUN go test --tags=e2e -v ./...
 
-FROM preper AS builder
+# Сборка.
+FROM preper AS building
 RUN go build -v -o /usr/local/bin/${NAME} ./cmd/main.go
 
+# Релиз.
 FROM alpine AS release
 ARG NAME
+# Настройки.
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Moscow /etc/localtime
-RUN mkdir -p /var/log/${NAME}
-RUN mkdir -p /etc/${NAME}
-COPY ./config /etc/${NAME}
+# Копирование файлов.
+COPY ./config /etc
 COPY ./fonts /usr/local/share/fonts
-WORKDIR /usr/local/bin
-COPY --from=builder /usr/local/bin/${NAME} ./${NAME}
-ENTRYPOINT ["skvdmt-tgbot-msgs"]
+COPY --from=building /usr/local/bin/${NAME} /usr/local/bin/${NAME}
+# Создание точки входа.
+COPY ./docker-entrypoint.sh /usr/local/bin
+RUN echo "exec ${NAME}" >> /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT [ "docker-entrypoint.sh" ]

@@ -8,14 +8,19 @@ import (
 )
 
 const (
-	// Путь к файлу конфигурации.
-	configFilePath = "/etc/skvdmt-tgbot-msgs/config.yaml"
-	// Директория с файлами шрифтов.
-	fontsFolder = "/usr/local/share/fonts/"
+	// Название приложения.
+	APP_NAME = "skvdmt-tgbot-msgs"
+
+	// Путь в директории конфигурации. (Добавляется директория с именем приложения).
+	configDirectory = "/etc"
+	// Имя файла конфигурации.
+	configFileName = "config.yaml"
+	// Путь в директории с файлами шрифтов. (Добавляется директория с файла шрифта).
+	fontsDirectory = "/usr/local/share/fonts"
 )
 
 // Timers Конфигурация временных интервалов.
-type Timers struct {
+type TimersConfig struct {
 	OptimizeUserRegistryInterval int    `yaml:"optimize-user-registry-interval"`
 	SendMessageCooldown          int    `yaml:"send-message-cooldown"`
 	AuthCooldown                 int    `yaml:"auth-cooldown"`
@@ -23,8 +28,8 @@ type Timers struct {
 	UsedTimeout                  int    `yaml:"used-timeout"`
 }
 
-// Postgres Конфигурация соединения с postgres.
-type Postgres struct {
+// PostgresConfig Конфигурация соединения с postgres.
+type PostgresConfig struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
 	User     string `yaml:"user"`
@@ -33,12 +38,12 @@ type Postgres struct {
 
 // MainConfig Основная конфигурация.
 type MainConfig struct {
-	DefaultMaxAuthAttempts uint      `yaml:"default-max-auth-attempts"`
-	BotName                string    `yaml:"bot-name"`
-	MsgsUrl                string    `yaml:"msgs-url"`
-	Timers                 Timers    `yaml:"timers"`
-	Postgres               *Postgres `yaml:"postgres"`
-	Fonts                  []string  `yaml:"fonts"`
+	DefaultMaxAuthAttempts uint            `yaml:"default-max-auth-attempts"`
+	BotName                string          `yaml:"bot-name"`
+	MsgsUrl                string          `yaml:"msgs-url"`
+	Timers                 TimersConfig    `yaml:"timers"`
+	Postgres               *PostgresConfig `yaml:"postgres"`
+	Fonts                  []string        `yaml:"fonts"`
 }
 
 // Cfg Глобальная конфигурация приложения.
@@ -48,16 +53,18 @@ var Config *MainConfig
 // установки указателя на нее в глобальную переменную Config.
 func LoadConfig() error {
 	Logs.Info.Info("configuration loading")
-	data, err := os.ReadFile(configFilePath)
+	d, err := os.ReadFile(filepath.Join(configDirectory, APP_NAME, configFileName))
 	if err != nil {
 		return err
 	}
-	Config = &MainConfig{}
-	if err := yaml.Unmarshal(data, Config); err != nil {
+	cfg := &MainConfig{}
+	if err := yaml.Unmarshal(d, cfg); err != nil {
 		return err
 	}
+	Config = cfg
 	for k := range Config.Fonts {
-		Config.Fonts[k] = filepath.Join(fontsFolder, Config.Fonts[k])
+		Config.Fonts[k] = filepath.Join(fontsDirectory, Config.Fonts[k])
 	}
+	Config = cfg
 	return nil
 }
