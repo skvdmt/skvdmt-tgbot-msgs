@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -70,7 +71,6 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 	if err := a.db.QueryRowContext(ctx,
 		`SELECT created_at FROM messages WHERE telegram_user_id = $1 ORDER BY created_at DESC LIMIT 1`,
 		telegramUserId).Scan(&mcat); err != nil {
-		fmt.Println("ERROR HERE")
 		return nil, err
 	}
 	return &mcat, nil
@@ -81,6 +81,10 @@ func (a *App) openDB() (*sql.DB, error) {
 	pwd, ok := os.LookupEnv(DB_PASSWORD)
 	if !ok {
 		return nil, fmt.Errorf("env %s not set", DB_PASSWORD)
+	}
+	pwd, err := url.QueryUnescape(pwd)
+	if err != nil {
+		return nil, err
 	}
 	db, err := sql.Open("postgres", fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
