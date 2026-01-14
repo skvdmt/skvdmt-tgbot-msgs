@@ -70,6 +70,7 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 	if err := a.db.QueryRowContext(ctx,
 		`SELECT created_at FROM messages WHERE telegram_user_id = $1 ORDER BY created_at DESC LIMIT 1`,
 		telegramUserId).Scan(&mcat); err != nil {
+		fmt.Println("ERROR HERE")
 		return nil, err
 	}
 	return &mcat, nil
