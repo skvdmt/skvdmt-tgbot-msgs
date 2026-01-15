@@ -30,7 +30,7 @@ type App struct {
 }
 
 // NewApp Конструктор.
-func NewApp(users *entities.UserRegistry) (*App, error) {
+func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("delivery layer creating")
 	a := &App{
 		exit:    make(chan struct{}),
@@ -46,7 +46,7 @@ func NewApp(users *entities.UserRegistry) (*App, error) {
 		return nil, err
 	}
 	// Создание сервисного слоя.
-	a.usecase, err = usecase.NewApp(a.users)
+	a.usecase, err = usecase.NewApp(ctx, a.users)
 	if err != nil {
 		return nil, err
 	}

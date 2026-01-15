@@ -38,9 +38,9 @@ type App struct {
 }
 
 // NewApp Конструктор.
-func NewApp(users *entities.UserRegistry) (*App, error) {
+func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("usecase layer creating")
-	rep, err := repository.NewApp(users)
+	rep, err := repository.NewApp(ctx, users)
 	if err != nil {
 		return nil, err
 	}

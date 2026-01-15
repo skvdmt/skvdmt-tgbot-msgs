@@ -24,7 +24,7 @@ type App struct {
 }
 
 // NewApp Конструктор.
-func NewApp(users *entities.UserRegistry) (*App, error) {
+func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("repository layer creating")
 	a := &App{
 		users: users,

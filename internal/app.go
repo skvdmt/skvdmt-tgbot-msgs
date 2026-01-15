@@ -20,6 +20,8 @@ type App struct {
 	exit chan os.Signal
 	// Ресурсы.
 	sources *sync.WaitGroup
+	// Контекст приложения.
+	ctx context.Context
 	// Функция отмены контекста всего приложения.
 	cancel context.CancelFunc
 	// Реестр пользователей.
@@ -44,9 +46,13 @@ func NewApp() (*App, error) {
 	if a.users, err = entities.NewUserRegistry(); err != nil {
 		return nil, err
 	}
+	// Создание контекста.
+	a.ctx, a.cancel = context.WithCancel(context.Background())
+	model.Logs.Info.Info("app context created")
+
 	// Создание транспортного слоя из которого по
 	// цепочки создаются остальные слои приложения.
-	if a.delivery, err = delivery.NewApp(a.users); err != nil {
+	if a.delivery, err = delivery.NewApp(a.ctx, a.users); err != nil {
 		return nil, err
 	}
 	return a, nil
@@ -57,30 +63,26 @@ func (a *App) Start() error {
 	model.Logs.Info.Info("telegram bot application running")
 	// Создане глобального канала ошибок для всего приложения.
 	model.Errors = make(chan error)
-	// Создание контекста.
-	var ctx context.Context
-	ctx, a.cancel = context.WithCancel(context.Background())
-	model.Logs.Info.Info("app context created")
 	// Начало работы ресурса приложения.
 	a.sources.Add(1)
 	go func() {
 		var err error
-		if err = a.delivery.Start(ctx); err != nil {
+		if err = a.delivery.Start(a.ctx); err != nil {
 			model.Errors <- err
 		}
 		// Завершение работы ресурса приложения.
 		a.sources.Done()
 	}()
 
-	go a.signalHandling(ctx)
+	go a.signalHandling()
 	return a.errorHandling()
 }
 
 // signalHandling Отслеживание сигналов операционной системы.
-func (a *App) signalHandling(ctx context.Context) {
+func (a *App) signalHandling() {
 	signal.Notify(a.exit, syscall.SIGTERM)
 	<-a.exit
-	model.Errors <- a.stop(ctx)
+	model.Errors <- a.stop()
 }
 
 // errorHandling Обработка канала ошибок.
@@ -91,10 +93,10 @@ func (a *App) errorHandling() error {
 }
 
 // stop Остановка.
-func (a *App) stop(ctx context.Context) error {
+func (a *App) stop() error {
 	// Остановка транспортного слоя из которо по цепочке
 	// останавливаются всех остальные слои.
-	if err := a.delivery.Stop(ctx); err != nil {
+	if err := a.delivery.Stop(a.ctx); err != nil {
 		return err
 	}
 	// Ожидание завершения работы ресурсов приложения.
