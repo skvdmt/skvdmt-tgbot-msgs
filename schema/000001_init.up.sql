@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS messages (
     id UUID NOT NULL DEFAULT uuidv7(),
-    telegram_user_id INTEGER NOT NULL,
+    telegram_user_id BIGINT NOT NULL,
     telegram_user_name VARCHAR(32) DEFAULT NULL,
     message TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
