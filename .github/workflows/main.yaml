@@ -16,7 +16,6 @@ jobs:
       - name: Cloning sources.
         run: |
           ssh -i ~/.ssh/github_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
-            set -e
             cd ~/src
             rm -rf ${{ github.repository }}
             git clone ssh://git@github.com/${{ github.repository }}.git
@@ -37,6 +36,7 @@ jobs:
       - name: Testing.
         run: |
           ssh -i ~/.ssh/github_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
+            set -e
             cd ~/src/${{ github.event.repository.name }}
             docker buildx create --use \
               --name ${{ secrets.DOCKER_NETWORK }}-builder \
