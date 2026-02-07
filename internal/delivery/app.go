@@ -101,6 +101,7 @@ func (a *App) Start(ctx context.Context) error {
 				return
 			}
 		}
+		model.Logs.Info.Info("update handle stopped")
 		a.sources.Done()
 	})
 	// Запуск API сервера для получения сообщений.
@@ -122,6 +123,7 @@ func (a *App) Start(ctx context.Context) error {
 			model.Errors <- err
 			return
 		}
+		model.Logs.Info.Info("API server stopped")
 		a.sources.Done()
 	})
 	a.sources.Wait()
