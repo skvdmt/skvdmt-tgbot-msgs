@@ -56,6 +56,7 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	a := &App{
 		sources: &sync.WaitGroup{},
 		users:   users,
+		router:  r,
 		tickerOptimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
 		exitOptimizeUserRegistry: make(chan struct{}),
