@@ -105,14 +105,16 @@ func (a *App) Start(ctx context.Context) error {
 	// Запуск API сервера для получения сообщений.
 	a.sources.Go(func() {
 		// Настройка маршрутов.
+		model.Logs.Info.Info("API server routes creating")
 		a.routes()
 		// Обновление сообщений.
+		model.Logs.Info.Info("API server messages updating")
 		if err := a.usecase.UpdateMessages(ctx); err != nil {
 			model.Errors <- err
 			return
 		}
 		// API server starting
-		model.Logs.Info.Info(fmt.Sprintf("api http server starting on %d port",
+		model.Logs.Info.Info(fmt.Sprintf("API server starting on %d port",
 			model.Config.APIServer.Port))
 		if err := a.APIServer.ListenAndServe(); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
