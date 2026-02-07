@@ -35,7 +35,9 @@ jobs:
           EOF
       - name: Testing.
         run: |
+          set -e
           ssh -i ~/.ssh/github_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
+            set -e
             cd ~/src/${{ github.event.repository.name }}
             docker buildx create --use \
               --name ${{ secrets.DOCKER_NETWORK }}-builder \
@@ -54,7 +56,9 @@ jobs:
           EOF
       - name: Building.
         run: |
+          set -e
           ssh -i ~/.ssh/github_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
+            set -e
             cd ~/src/${{ github.event.repository.name }}
             docker build \
              --build-arg NAME=${{ github.event.repository.name }} \
