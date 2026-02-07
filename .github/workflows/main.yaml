@@ -35,6 +35,7 @@ jobs:
           EOF
       - name: Testing.
         run: |
+          set -e
           ssh -i ~/.ssh/github_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
             cd ~/src/${{ github.event.repository.name }}
             docker buildx create --use \
