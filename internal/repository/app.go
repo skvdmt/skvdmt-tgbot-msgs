@@ -9,25 +9,31 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/skvdmt/skvdmt-back/pkg/errwrap"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/model"
+	"google.golang.org/grpc/codes"
 )
 
 const (
-	DB_PASSWORD = "DB_PASSWORD"
+	DB_PASSWORD     = "DB_PASSWORD"
+	POSTGRES_DRIVER = "postgres"
+	pkg             = "repository"
 )
 
 // App Репозиторный слой.
 type App struct {
-	db    *sql.DB
-	users *entities.UserRegistry
+	// Название.
+	name string
+	// Соединение с базой данных.
+	db *sql.DB
 }
 
 // NewApp Конструктор.
-func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
+func NewApp(ctx context.Context) (*App, error) {
 	model.Logs.Info.Info("repository layer creating")
 	a := &App{
-		users: users,
+		name: "App",
 	}
 	var err error
 	// Соединение с СУБД.
@@ -76,6 +82,37 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 	return &mcat, nil
 }
 
+// Messages Репозиторий сообщений.
+func (a *App) Messages(ctx context.Context) ([]*entities.Message, error) {
+	mtd := "UpdateMessages"
+	query := "SELECT id, message, created_at FROM messages ORDER BY created_at DESC"
+	rows, err := a.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, errwrap.New(
+			errwrap.CodegRPC(int(codes.Internal)),
+			errwrap.Internal(
+				errwrap.Location(pkg, a.name, mtd),
+				errwrap.Error(err),
+			),
+		)
+	}
+	var mgs []*entities.Message
+	for rows.Next() {
+		m := &entities.Message{}
+		if err := rows.Scan(m); err != nil {
+			return nil, errwrap.New(
+				errwrap.CodegRPC(int(codes.Internal)),
+				errwrap.Internal(
+					errwrap.Location(pkg, a.name, mtd),
+					errwrap.Error(err),
+				),
+			)
+		}
+		mgs = append(mgs, m)
+	}
+	return mgs, nil
+}
+
 // openDB Соединение с базой данных postgress.
 func (a *App) openDB() (*sql.DB, error) {
 	pwd, ok := os.LookupEnv(DB_PASSWORD)
@@ -86,7 +123,7 @@ func (a *App) openDB() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("postgres", fmt.Sprintf(
+	db, err := sql.Open(POSTGRES_DRIVER, fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		model.Config.Postgres.Host,
 		model.Config.Postgres.Port,

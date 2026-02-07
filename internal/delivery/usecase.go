@@ -27,4 +27,8 @@ type Usecase interface {
 	OptimizeUserRegistry(ctx context.Context) error
 	// Получение пользователя.
 	User(ctx context.Context, telegramUserId int) (*entities.User, error)
+	// Сообщения.
+	Messages(ctx context.Context) ([]*entities.Message, error)
+	// Обновление сообщений.
+	UpdateMessages(ctx context.Context) error
 }

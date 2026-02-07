@@ -13,6 +13,8 @@ Created without third-party libraries for working with [Telegram Bot API](https:
 
 The bot performs authorization by analyzing the characters entered from the image. The [skvdmt/captcha](https://github.com/skvdmt/captcha) library is used to generate captchas and additional fonts located in the [fonts](./fonts) folder
 
+The application has an API on the port specified in the configuration at /messages, which allows you to receive all messages.
+
 # Download sources
 ```sh
 git clone https://github.com/skvdmt/skvdmt-tgbot-msgs .

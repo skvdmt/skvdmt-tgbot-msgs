@@ -64,15 +64,13 @@ func (a *App) Start() error {
 	// Создане глобального канала ошибок для всего приложения.
 	model.Errors = make(chan error)
 	// Начало работы ресурса приложения.
-	a.sources.Add(1)
-	go func() {
+	a.sources.Go(func() {
 		var err error
 		if err = a.delivery.Start(a.ctx); err != nil {
 			model.Errors <- err
 		}
 		// Завершение работы ресурса приложения.
-		a.sources.Done()
-	}()
+	})
 
 	go a.signalHandling()
 	return a.errorHandling()

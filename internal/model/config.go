@@ -36,13 +36,20 @@ type PostgresConfig struct {
 	Database string `yaml:"database"`
 }
 
+// APIServerConfig Конфигурация API сервера.
+type APIServerConfig struct {
+	BaseUrl string `yaml:"base_url"`
+	Port    int    `yaml:"port"`
+}
+
 // MainConfig Основная конфигурация.
 type MainConfig struct {
 	DefaultMaxAuthAttempts uint            `yaml:"default-max-auth-attempts"`
 	BotName                string          `yaml:"bot-name"`
 	MsgsUrl                string          `yaml:"msgs-url"`
-	Timers                 TimersConfig    `yaml:"timers"`
+	Timers                 *TimersConfig   `yaml:"timers"`
 	Postgres               *PostgresConfig `yaml:"postgres"`
+	APIServer              APIServerConfig `yaml:"api_server"`
 	Fonts                  []string        `yaml:"fonts"`
 }
 

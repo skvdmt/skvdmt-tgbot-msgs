@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
@@ -35,17 +36,21 @@ const (
 type App struct {
 	repository Repository
 	users      *entities.UserRegistry
+	// Сообщения.
+	messages   []*entities.Message
+	muMessages *sync.RWMutex
 }
 
 // NewApp Конструктор.
 func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("usecase layer creating")
-	rep, err := repository.NewApp(ctx, users)
+	rep, err := repository.NewApp(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &App{
 		users:      users,
+		muMessages: &sync.RWMutex{},
 		repository: rep,
 	}, nil
 }
@@ -194,4 +199,23 @@ func (a *App) User(ctx context.Context, telegramUserId int) (*entities.User, err
 	u.SetMessageCreatedAt(*mcat)
 	a.users.Set(u)
 	return u, nil
+}
+
+// Messages Сервис сообщений.
+func (a *App) Messages(ctx context.Context) ([]*entities.Message, error) {
+	a.muMessages.RLock()
+	defer a.muMessages.RUnlock()
+	return a.messages, nil
+}
+
+// UpdateMessages Сервис обновления сообщений.
+func (a *App) UpdateMessages(ctx context.Context) error {
+	mgs, err := a.repository.Messages(ctx)
+	if err != nil {
+		return err
+	}
+	a.muMessages.Lock()
+	a.messages = mgs
+	a.muMessages.Unlock()
+	return nil
 }
