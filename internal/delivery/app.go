@@ -152,11 +152,11 @@ func (a *App) Stop(ctx context.Context) error {
 // handlerOptimizeUserRegistry Обработка сигналов раннеров оптимизации реестра
 // пользователей и очистки базы данных реестра пользователей.
 func (a *App) handlerOptimizeUserRegistry(ctx context.Context) {
-	model.Logs.Info.Info("user registry cleaner started")
+	model.Logs.Info.Info("handler optimize user registry started")
 	for {
 		select {
 		case <-a.exitOptimizeUserRegistry:
-			model.Logs.Info.Info("user registry cleaner stopped")
+			model.Logs.Info.Info("handler optimize user registry stopped")
 			a.sources.Done()
 			return
 		case <-a.tickerOptimizeUserRegistry.C:
