@@ -5,6 +5,7 @@ WORKDIR /usr/src/${NAME}
 COPY . .
 COPY ./config /etc
 COPY ./fonts /usr/local/share/fonts
+RUN set -e
 RUN go mod download
 
 # Тестирование.
