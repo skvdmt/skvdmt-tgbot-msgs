@@ -16,6 +16,7 @@ jobs:
       - name: Cloning sources.
         run: |
           ssh -i ~/.ssh/github_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
+            set -e
             qqq
             cd ~/src
             rm -rf ${{ github.repository }}
