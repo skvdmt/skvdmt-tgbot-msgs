@@ -237,7 +237,7 @@ func (a *App) messages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	model.Logs.Info.Info("get messages")
-	a.sendJSON(w, http.StatusOK, mgs)
+	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs})
 }
 
 // errorHandle Обработка HTTP ошибки.
