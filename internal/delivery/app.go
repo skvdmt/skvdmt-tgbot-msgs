@@ -106,10 +106,10 @@ func (a *App) Start(ctx context.Context) error {
 		a.routes()
 		// Обновление сообщений.
 		model.Logs.Info.Info("API server messages updating")
-		if err := a.usecase.UpdateMessages(ctx); err != nil {
-			model.Errors <- err
-			return
-		}
+		// if err := a.usecase.UpdateMessages(ctx); err != nil {
+		// 	model.Errors <- err
+		// 	return
+		// }
 		// API server starting
 		model.Logs.Info.Info(fmt.Sprintf("API server starting on %d port",
 			model.Config.APIServer.Port))
