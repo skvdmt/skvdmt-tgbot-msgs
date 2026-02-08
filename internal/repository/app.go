@@ -9,10 +9,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/skvdmt/skvdmt-back/pkg/errwrap"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/model"
-	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -82,31 +80,18 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 	return &mcat, nil
 }
 
-// Messages Репозиторий сообщений.
-func (a *App) Messages(ctx context.Context) ([]*entities.Message, error) {
-	mtd := "Messages"
+// UpdateMessages Репозиторий сообщений.
+func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 	query := "SELECT id, message, created_at FROM messages ORDER BY created_at DESC"
 	rows, err := a.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, errwrap.New(
-			errwrap.CodegRPC(int(codes.Internal)),
-			errwrap.Internal(
-				errwrap.Location(pkg, a.name, mtd),
-				errwrap.Error(err),
-			),
-		)
+		return nil, err
 	}
 	var mgs []*entities.Message
 	for rows.Next() {
 		m := &entities.Message{}
 		if err := rows.Scan(m); err != nil {
-			return nil, errwrap.New(
-				errwrap.CodegRPC(int(codes.Internal)),
-				errwrap.Internal(
-					errwrap.Location(pkg, a.name, mtd),
-					errwrap.Error(err),
-				),
-			)
+			return nil, err
 		}
 		mgs = append(mgs, m)
 	}

@@ -17,5 +17,5 @@ type Repository interface {
 	// Получение времени создания последнего сообщения пользователем.
 	UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*time.Time, error)
 	// Получение сообщений из репозитория.
-	Messages(ctx context.Context) ([]*entities.Message, error)
+	UpdateMessages(ctx context.Context) ([]*entities.Message, error)
 }

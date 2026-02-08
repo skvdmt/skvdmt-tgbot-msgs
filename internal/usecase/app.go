@@ -210,7 +210,7 @@ func (a *App) Messages(ctx context.Context) ([]*entities.Message, error) {
 
 // UpdateMessages Сервис обновления сообщений.
 func (a *App) UpdateMessages(ctx context.Context) error {
-	mgs, err := a.repository.Messages(ctx)
+	mgs, err := a.repository.UpdateMessages(ctx)
 	if err != nil {
 		return err
 	}
