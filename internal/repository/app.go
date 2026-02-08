@@ -55,7 +55,7 @@ func (a *App) Stop(ctx context.Context) error {
 // SaveMessage Сохранение сообщения.
 func (a *App) SaveMessage(ctx context.Context, telegramUserId int, message *entities.Message) error {
 	_, err := a.db.ExecContext(ctx,
-		`INSERT INTO messages (telegram_user_id, telegram_user_name, text, created_at) VALUES ($1, $2, $3);`,
+		`INSERT INTO messages (telegram_user_id, telegram_user_name, text, created_at) VALUES ($1, $2, $3, $4);`,
 		telegramUserId,
 		a.nullString(message.TelegramUserName),
 		message.Text,
