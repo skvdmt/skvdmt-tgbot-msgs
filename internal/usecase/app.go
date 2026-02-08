@@ -153,6 +153,9 @@ func (a *App) MessageHandle(ctx context.Context,
 		update.Message.Text); err != nil {
 		return nil, err
 	}
+	if err := a.UpdateMessages(ctx); err != nil {
+		return nil, err
+	}
 	user.SetMessageCreatedAt(time.Now())
 	user.SetBotWant(entities.BotWantCommand)
 	return configs.NewSendMessage(fmt.Sprintf(messages.SendMessageSaved,

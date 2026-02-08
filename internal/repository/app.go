@@ -82,7 +82,7 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 
 // UpdateMessages Репозиторий сообщений.
 func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
-	query := "SELECT id, message, created_at FROM messages ORDER BY created_at DESC"
+	query := "SELECT id, telegram_user_name, message, created_at FROM messages ORDER BY created_at DESC"
 	rows, err := a.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,10 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 	var mgs []*entities.Message
 	for rows.Next() {
 		m := &entities.Message{}
-		if err := rows.Scan(&m.Id, &m.Message, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.Id,
+			&m.TelegramUserName,
+			&m.Message,
+			&m.CreatedAt); err != nil {
 			return nil, err
 		}
 		mgs = append(mgs, m)
