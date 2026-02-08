@@ -10,6 +10,6 @@ import (
 type Message struct {
 	Id               uuid.UUID `json:"id"`
 	TelegramUserName string    `json:"telegram_user_name"`
-	Message          string    `json:"message"`
+	Text             string    `json:"text"`
 	CreatedAt        time.Time `json:"created_at"`
 }

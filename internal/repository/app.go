@@ -53,19 +53,19 @@ func (a *App) Stop(ctx context.Context) error {
 }
 
 // SaveMessage Сохранение сообщения.
-func (a *App) SaveMessage(
-	ctx context.Context,
-	telegramUserId int,
-	telegramUserName string,
-	text string,
-) error {
+func (a *App) SaveMessage(ctx context.Context, telegramUserId int, message *entities.Message) error {
 	_, err := a.db.ExecContext(ctx,
-		`INSERT INTO messages (telegram_user_id, telegram_user_name, message) VALUES ($1, $2, $3);`,
-		telegramUserId, a.nullString(telegramUserName), text)
+		`INSERT INTO messages (telegram_user_id, telegram_user_name, text, created_at) VALUES ($1, $2, $3);`,
+		telegramUserId,
+		a.nullString(message.TelegramUserName),
+		message.Text,
+		message.CreatedAt)
 	if err != nil {
 		return err
 	}
-	model.Logs.Info.Info(fmt.Sprintf("message %s from telegram_user_id %d saved", text, telegramUserId))
+	model.Logs.Info.Info(fmt.Sprintf(
+		"message %s from telegram_user_id %d saved",
+		message.Text, telegramUserId))
 	return nil
 }
 
@@ -73,7 +73,7 @@ func (a *App) SaveMessage(
 func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*time.Time, error) {
 	mcat := time.Time{}
 	if err := a.db.QueryRowContext(ctx,
-		`SELECT created_at FROM messages WHERE telegram_user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+		`SELECT created_at FROM messages WHERE telegram_user_id = $1 ORDER BY created_at DESC LIMIT 1;`,
 		telegramUserId).Scan(&mcat); err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 
 // UpdateMessages Репозиторий сообщений.
 func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
-	query := "SELECT id, telegram_user_name, message, created_at FROM messages ORDER BY created_at DESC"
+	query := "SELECT id, telegram_user_name, text, created_at FROM messages;"
 	rows, err := a.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 		m := &entities.Message{}
 		if err := rows.Scan(&m.Id,
 			&m.TelegramUserName,
-			&m.Message,
+			&m.Text,
 			&m.CreatedAt); err != nil {
 			return nil, err
 		}

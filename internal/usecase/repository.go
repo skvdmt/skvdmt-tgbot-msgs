@@ -12,8 +12,7 @@ type Repository interface {
 	// Остановка.
 	Stop(ctx context.Context) error
 	// Сохранение сообщения.
-	SaveMessage(ctx context.Context, telegramUserId int,
-		telegramUserName string, text string) error
+	SaveMessage(ctx context.Context, telegramUserId int, message *entities.Message) error
 	// Получение времени создания последнего сообщения пользователем.
 	UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*time.Time, error)
 	// Получение сообщений из репозитория.

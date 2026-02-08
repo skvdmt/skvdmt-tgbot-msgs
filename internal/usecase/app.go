@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities/configs"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/messages"
@@ -147,16 +148,21 @@ func (a *App) MessageHandle(ctx context.Context,
 			return nil, fmt.Errorf("message are saved")
 		}
 	}
-	if err := a.repository.SaveMessage(ctx,
-		user.TelegramUserId(),
-		user.TelegramUsername(),
-		update.Message.Text); err != nil {
+	m := &entities.Message{
+		Id:               uuid.New(),
+		TelegramUserName: user.TelegramUsername(),
+		Text:             update.Message.Text,
+		CreatedAt:        time.Now(),
+	}
+	if err := a.repository.SaveMessage(ctx, user.TelegramUserId(), m); err != nil {
 		return nil, err
 	}
-	if err := a.UpdateMessages(ctx); err != nil {
-		return nil, err
-	}
-	user.SetMessageCreatedAt(time.Now())
+
+	a.muMessages.Lock()
+	a.messages = append(a.messages, m)
+	a.muMessages.Unlock()
+
+	user.SetMessageCreatedAt(m.CreatedAt)
 	user.SetBotWant(entities.BotWantCommand)
 	return configs.NewSendMessage(fmt.Sprintf(messages.SendMessageSaved,
 		model.Config.MsgsUrl, user.SendMessageCooldownLeft())), nil
