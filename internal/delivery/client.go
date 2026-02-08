@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/dto"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
@@ -35,8 +34,6 @@ const (
 type Client struct {
 	// Канал сигнала остановки получения обновлений.
 	stopGetUpdates chan struct{}
-	// Ресурсы.
-	sources *sync.WaitGroup
 	// HTTP клиент, через который делаются запросы.
 	client *http.Client
 	// Token для авторизации.
@@ -57,7 +54,6 @@ func NewClient() (*Client, error) {
 	}
 	c := &Client{
 		stopGetUpdates:   make(chan struct{}),
-		sources:          &sync.WaitGroup{},
 		client:           &http.Client{},
 		Updates:          make(chan *entities.Update),
 		token:            tkn,
@@ -69,17 +65,14 @@ func NewClient() (*Client, error) {
 // Start Запуск.
 func (c *Client) Start(ctx context.Context) error {
 	model.Logs.Info.Info("client started")
-	c.sources.Go(func() {
-		c.getUpdates(ctx)
-	})
+	go c.getUpdates(ctx)
 	return nil
 }
 
 // Stop Остановка.
 func (c *Client) Stop(ctx context.Context) error {
 	c.stopGetUpdates <- struct{}{}
-	// Ожидание завершения работы ресурсов.
-	c.sources.Wait()
+	model.Logs.Info.Info("getting updates stopped")
 	// Закрытие канала остановки получения обновлений.
 	close(c.stopGetUpdates)
 	// Закрытие канал обновлений.
@@ -94,8 +87,6 @@ func (c *Client) getUpdates(ctx context.Context) {
 	for {
 		select {
 		case <-c.stopGetUpdates:
-			model.Logs.Info.Info("getting updates stopped")
-			c.sources.Done()
 			return
 		default:
 			res, err := c.Do(ctx, c.ConfigGetUpdates)

@@ -39,7 +39,7 @@ type App struct {
 	// Раннер оптимизации реестра пользователей.
 	tickerOptimizeUserRegistry *time.Ticker
 	// Канал остановки системы оптимизации пользователей.
-	exitOptimizeUserRegistry chan struct{}
+	stopOptimizeUserRegistry chan struct{}
 	// Роутер.
 	router *http.ServeMux
 	// HTTP сервер.
@@ -55,7 +55,7 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 		router: r,
 		tickerOptimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
-		exitOptimizeUserRegistry: make(chan struct{}),
+		stopOptimizeUserRegistry: make(chan struct{}),
 		APIServer: &http.Server{
 			Addr:           fmt.Sprintf(":%d", model.Config.APIServer.Port),
 			Handler:        r,
@@ -126,7 +126,8 @@ func (a *App) Start(ctx context.Context) error {
 // Stop Остановка.
 func (a *App) Stop(ctx context.Context) error {
 	// Остановка системы оптимизации пользователей.
-	a.exitOptimizeUserRegistry <- struct{}{}
+	a.stopOptimizeUserRegistry <- struct{}{}
+	model.Logs.Info.Info("handler optimize user registry stopped")
 	// Остановка клиента делающего запросы к Telegram Bot API.
 	if err := a.client.Stop(ctx); err != nil {
 		return err
@@ -136,7 +137,7 @@ func (a *App) Stop(ctx context.Context) error {
 		return err
 	}
 	// Закрытие канала остановки ресурсов.
-	close(a.exitOptimizeUserRegistry)
+	close(a.stopOptimizeUserRegistry)
 	// Вызов остановки сервисного слоя.
 	if err := a.usecase.Stop(ctx); err != nil {
 		return err
@@ -151,8 +152,7 @@ func (a *App) handlerOptimizeUserRegistry(ctx context.Context) {
 	model.Logs.Info.Info("handler optimize user registry starting")
 	for {
 		select {
-		case <-a.exitOptimizeUserRegistry:
-			model.Logs.Info.Info("handler optimize user registry stopped")
+		case <-a.stopOptimizeUserRegistry:
 			return
 		case <-a.tickerOptimizeUserRegistry.C:
 			if err := a.usecase.OptimizeUserRegistry(ctx); err != nil {
