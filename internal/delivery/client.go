@@ -33,8 +33,8 @@ const (
 // Client Клиент для запросов к Telegram Bot API
 // и получения на них ответов.
 type Client struct {
-	// Канал остановки ресурсов.
-	exit chan struct{}
+	// Канал сигнала остановки получения обновлений.
+	stopGetUpdates chan struct{}
 	// Ресурсы.
 	sources *sync.WaitGroup
 	// HTTP клиент, через который делаются запросы.
@@ -56,7 +56,7 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("env %s not set", TGBOT_TOKEN)
 	}
 	c := &Client{
-		exit:             make(chan struct{}),
+		stopGetUpdates:   make(chan struct{}),
 		sources:          &sync.WaitGroup{},
 		client:           &http.Client{},
 		Updates:          make(chan *entities.Update),
@@ -69,18 +69,19 @@ func NewClient() (*Client, error) {
 // Start Запуск.
 func (c *Client) Start(ctx context.Context) error {
 	model.Logs.Info.Info("client started")
-	c.sources.Add(1)
-	go c.getUpdates(ctx)
+	c.sources.Go(func() {
+		c.getUpdates(ctx)
+	})
 	return nil
 }
 
 // Stop Остановка.
 func (c *Client) Stop(ctx context.Context) error {
-	c.exit <- struct{}{}
+	c.stopGetUpdates <- struct{}{}
 	// Ожидание завершения работы ресурсов.
 	c.sources.Wait()
-	// Закрытие канала остановки ресурсов.
-	close(c.exit)
+	// Закрытие канала остановки получения обновлений.
+	close(c.stopGetUpdates)
 	// Закрытие канал обновлений.
 	close(c.Updates)
 	model.Logs.Info.Info("client stopped")
@@ -92,7 +93,7 @@ func (c *Client) getUpdates(ctx context.Context) {
 	model.Logs.Info.Info("getting updates started")
 	for {
 		select {
-		case <-c.exit:
+		case <-c.stopGetUpdates:
 			model.Logs.Info.Info("getting updates stopped")
 			c.sources.Done()
 			return

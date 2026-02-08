@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"sync"
 	"time"
 
 	erw "github.com/skvdmt/skvdmt-back/pkg/errwrap"
@@ -31,8 +30,6 @@ const (
 
 // App Транспортный слой.
 type App struct {
-	// Ресурсы.
-	sources *sync.WaitGroup
 	// Сервисный слой.
 	usecase Usecase
 	// Клиент для запросов к Telegram Bot API.
@@ -54,9 +51,8 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("delivery layer creating")
 	r := http.NewServeMux()
 	a := &App{
-		sources: &sync.WaitGroup{},
-		users:   users,
-		router:  r,
+		users:  users,
+		router: r,
 		tickerOptimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
 		exitOptimizeUserRegistry: make(chan struct{}),
@@ -84,13 +80,13 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 
 // Start Запуск.
 func (a *App) Start(ctx context.Context) error {
-	model.Logs.Info.Info("delivery layer started")
+	model.Logs.Info.Info("delivery layer starting")
 	// Запуск ресурса обработка оптимизации реестра пользователей.
-	a.sources.Go(func() {
+	go func() {
 		a.handlerOptimizeUserRegistry(ctx)
-	})
-	// Запуск клиента для запросов к боту.
-	a.sources.Go(func() {
+	}()
+	// Запуск клиента для запросов к боту и чтениее обновлений.
+	go func() {
 		if err := a.client.Start(ctx); err != nil {
 			model.Errors <- err
 			return
@@ -102,10 +98,9 @@ func (a *App) Start(ctx context.Context) error {
 			}
 		}
 		model.Logs.Info.Info("update handle stopped")
-		a.sources.Done()
-	})
+	}()
 	// Запуск API сервера для получения сообщений.
-	a.sources.Go(func() {
+	go func() {
 		// Настройка маршрутов.
 		model.Logs.Info.Info("API server routes creating")
 		a.routes()
@@ -124,9 +119,7 @@ func (a *App) Start(ctx context.Context) error {
 			return
 		}
 		model.Logs.Info.Info("API server stopped")
-		a.sources.Done()
-	})
-	a.sources.Wait()
+	}()
 	return nil
 }
 
@@ -155,12 +148,11 @@ func (a *App) Stop(ctx context.Context) error {
 // handlerOptimizeUserRegistry Обработка сигналов раннеров оптимизации реестра
 // пользователей и очистки базы данных реестра пользователей.
 func (a *App) handlerOptimizeUserRegistry(ctx context.Context) {
-	model.Logs.Info.Info("handler optimize user registry started")
+	model.Logs.Info.Info("handler optimize user registry starting")
 	for {
 		select {
 		case <-a.exitOptimizeUserRegistry:
 			model.Logs.Info.Info("handler optimize user registry stopped")
-			a.sources.Done()
 			return
 		case <-a.tickerOptimizeUserRegistry.C:
 			if err := a.usecase.OptimizeUserRegistry(ctx); err != nil {

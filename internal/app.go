@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	_ "github.com/lib/pq"
@@ -17,9 +16,7 @@ import (
 type App struct {
 	// Канал сигналов операционной системы
 	// для остановки ресурсов.
-	exit chan os.Signal
-	// Ресурсы.
-	sources *sync.WaitGroup
+	stopSources chan os.Signal
 	// Контекст приложения.
 	ctx context.Context
 	// Функция отмены контекста всего приложения.
@@ -34,8 +31,7 @@ type App struct {
 func NewApp() (*App, error) {
 	model.Logs.Info.Info("telegram bot application creating")
 	a := &App{
-		exit:    make(chan os.Signal),
-		sources: &sync.WaitGroup{},
+		stopSources: make(chan os.Signal),
 	}
 	var err error
 	// Загрузка конфигурации.
@@ -63,23 +59,22 @@ func (a *App) Start() error {
 	model.Logs.Info.Info("telegram bot application running")
 	// Создане глобального канала ошибок для всего приложения.
 	model.Errors = make(chan error)
-	// Начало работы ресурса приложения.
-	a.sources.Go(func() {
+	// Начало работы ресурсов приложения.
+	go func() {
 		var err error
 		if err = a.delivery.Start(a.ctx); err != nil {
 			model.Errors <- err
 		}
-		// Завершение работы ресурса приложения.
-	})
-
+	}()
 	go a.signalHandling()
+	// Обработка глобального канала ошибок.
 	return a.errorHandling()
 }
 
 // signalHandling Отслеживание сигналов операционной системы.
 func (a *App) signalHandling() {
-	signal.Notify(a.exit, syscall.SIGTERM)
-	<-a.exit
+	signal.Notify(a.stopSources, syscall.SIGTERM)
+	<-a.stopSources
 	model.Errors <- a.stop()
 }
 
@@ -97,10 +92,8 @@ func (a *App) stop() error {
 	if err := a.delivery.Stop(a.ctx); err != nil {
 		return err
 	}
-	// Ожидание завершения работы ресурсов приложения.
-	a.sources.Wait()
-	// Закрытие канала отслеживающего сигналы операционной системы.
-	close(a.exit)
+	// Закрытие канала остановки ресурсов.
+	close(a.stopSources)
 	// Отмена контекста.
 	a.cancel()
 	model.Logs.Info.Info("skidanovdima_msgs_bot stopped")
