@@ -90,7 +90,7 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 	var mgs []*entities.Message
 	for rows.Next() {
 		m := &entities.Message{}
-		if err := rows.Scan(m); err != nil {
+		if err := rows.Scan(m.Id, m.Message, m.CreatedAt); err != nil {
 			return nil, err
 		}
 		mgs = append(mgs, m)
