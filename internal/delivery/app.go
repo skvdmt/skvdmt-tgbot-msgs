@@ -270,6 +270,27 @@ func (a *App) messages(w http.ResponseWriter, r *http.Request) {
 	if ps.Page == 0 {
 		ps.Page = 1
 	}
+	// Валидация параметров.
+	if ps.Limit < 0 {
+		a.errorHandle(w, erw.New(
+			erw.CodeHTTP(http.StatusBadRequest),
+			erw.Internal(
+				erw.Location(pkg, app, m),
+				erw.Error(fmt.Errorf("%v the limit value must not be negative",
+					fmt.Errorf("incorrect limit value: %d;", ps.Limit))),
+			)))
+		return
+	}
+	if ps.Page < 0 {
+		a.errorHandle(w, erw.New(
+			erw.CodeHTTP(http.StatusBadRequest),
+			erw.Internal(
+				erw.Location(pkg, app, m),
+				erw.Error(fmt.Errorf("%v the page value must not be negative",
+					fmt.Errorf("incorrect page value: %d;", ps.Page))),
+			)))
+		return
+	}
 	mgs, total, err := a.usecase.Messages(r.Context(), ps)
 	if err != nil {
 		a.errorHandle(w, err)

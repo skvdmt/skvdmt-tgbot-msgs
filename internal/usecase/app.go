@@ -215,14 +215,18 @@ func (a *App) Messages(ctx context.Context, params *entities.MessagesRequestPara
 	a.muMessages.RLock()
 	defer a.muMessages.RUnlock()
 	if params.Limit == 0 {
+		// Лимит не указан.
 		return a.messages, len(a.messages), nil
 	}
 	switch {
 	case params.Limit*params.Page-params.Limit > len(a.messages):
+		// Начало списка выходит за рамки.
 		return []*entities.Message{}, len(a.messages), nil
 	case params.Limit*params.Page > len(a.messages):
+		// Конец списка выходит за рамки.
 		return a.messages[params.Limit*params.Page-params.Limit:], len(a.messages), nil
 	default:
+		// Список в рамках.
 		return a.messages[params.Limit*params.Page-params.Limit : params.Limit*params.Page], len(a.messages), nil
 	}
 }
