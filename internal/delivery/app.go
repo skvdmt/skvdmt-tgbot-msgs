@@ -237,7 +237,7 @@ func (a *App) messages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	model.Logs.Info.Info("get messages")
-	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs})
+	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs}, len(mgs))
 }
 
 // errorHandle Обработка HTTP ошибки.
@@ -260,12 +260,15 @@ func (a *App) errorHandle(w http.ResponseWriter, err error) {
 	case 500 >= e.Code() && e.Code() <= 599:
 		model.Logs.Info.Info(fmt.Sprintf("%v", e.Detailed()))
 	}
-	a.sendJSON(w, e.Code(), map[string]string{"message": e.Message()})
+	a.sendJSON(w, e.Code(), map[string]string{"message": e.Message()}, 0)
 }
 
 // sendJSON Отправка ответа в JSON.
-func (a *App) sendJSON(w http.ResponseWriter, code int, value any) {
+func (a *App) sendJSON(w http.ResponseWriter, code int, value any, total int) {
 	w.Header().Set("Content-Type", "application/json")
+	if total > 0 {
+		w.Header().Set("X-Total-Count", fmt.Sprintf("%d", total))
+	}
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(value)
 }
