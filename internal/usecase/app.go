@@ -215,7 +215,7 @@ func (a *App) Messages(ctx context.Context, params *entities.MessagesRequestPara
 	a.muMessages.RLock()
 	defer a.muMessages.RUnlock()
 	for _, m := range a.messages {
-		fmt.Println(&m.Text)
+		fmt.Println(m.Text)
 	}
 	if params.Limit == 0 {
 		// Лимит не указан.
