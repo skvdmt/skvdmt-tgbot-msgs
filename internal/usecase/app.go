@@ -214,6 +214,9 @@ func (a *App) User(ctx context.Context, telegramUserId int) (*entities.User, err
 func (a *App) Messages(ctx context.Context, params *entities.MessagesRequestParams) (mgs []*entities.Message, total int, err error) {
 	a.muMessages.RLock()
 	defer a.muMessages.RUnlock()
+	if params.Limit == 0 {
+		return a.messages, len(a.messages), nil
+	}
 	switch {
 	case params.Limit*params.Page-params.Limit > len(a.messages):
 		return []*entities.Message{}, len(a.messages), nil

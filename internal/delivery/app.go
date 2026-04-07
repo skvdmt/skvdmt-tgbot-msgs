@@ -236,35 +236,41 @@ func (a *App) routes() error {
 // messages Обработчик запроса сообщений.
 func (a *App) messages(w http.ResponseWriter, r *http.Request) {
 	const m = "messages"
-	p := &entities.MessagesRequestParams{}
+	ps := &entities.MessagesRequestParams{}
 	var err error
-	p.Limit, err = strconv.Atoi(r.URL.Query().Get(limit))
-	if err != nil {
-		a.errorHandle(w, erw.New(
-			erw.CodeHTTP(http.StatusBadRequest),
-			erw.Internal(
-				erw.Location(pkg, app, m),
-				erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
-					fmt.Errorf("conversion error"), err, r.URL.Query().Get(limit))),
-			)))
-		return
+	pm := r.URL.Query().Get(limit)
+	if len(pm) > 0 {
+		ps.Limit, err = strconv.Atoi(pm)
+		if err != nil {
+			a.errorHandle(w, erw.New(
+				erw.CodeHTTP(http.StatusBadRequest),
+				erw.Internal(
+					erw.Location(pkg, app, m),
+					erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
+						fmt.Errorf("conversion error"), err, pm)),
+				)))
+			return
+		}
 	}
-	p.Page, err = strconv.Atoi(r.URL.Query().Get(page))
-	if err != nil {
-		a.errorHandle(w, erw.New(
-			erw.CodeHTTP(http.StatusBadRequest),
-			erw.Internal(
-				erw.Location(pkg, app, m),
-				erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
-					fmt.Errorf("conversion error"), err, r.URL.Query().Get(page))),
-			)))
-		return
+	pm = r.URL.Query().Get(page)
+	if len(pm) > 0 {
+		ps.Page, err = strconv.Atoi(pm)
+		if err != nil {
+			a.errorHandle(w, erw.New(
+				erw.CodeHTTP(http.StatusBadRequest),
+				erw.Internal(
+					erw.Location(pkg, app, m),
+					erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
+						fmt.Errorf("conversion error"), err, pm)),
+				)))
+			return
+		}
 	}
 	// По умолчанию первая страница
-	if p.Page == 0 {
-		p.Page = 1
+	if ps.Page == 0 {
+		ps.Page = 1
 	}
-	mgs, total, err := a.usecase.Messages(r.Context(), p)
+	mgs, total, err := a.usecase.Messages(r.Context(), ps)
 	if err != nil {
 		a.errorHandle(w, err)
 		return
