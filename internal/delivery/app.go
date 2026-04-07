@@ -330,5 +330,9 @@ func (a *App) sendJSON(w http.ResponseWriter, code int, value any, total int) {
 		w.Header().Set("X-Total-Count", fmt.Sprintf("%d", total))
 	}
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(value)
+
+	r, _ := json.Marshal(value)
+	_, _ = w.Write(r)
+
+	// json.NewEncoder(w).Encode(value)
 }
