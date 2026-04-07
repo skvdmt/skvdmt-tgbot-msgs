@@ -82,7 +82,7 @@ func (a *App) UserMessageCreatedAt(ctx context.Context, telegramUserId int) (*ti
 
 // UpdateMessages Репозиторий сообщений.
 func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
-	query := "SELECT id, telegram_user_name, text, created_at FROM messages;"
+	query := "SELECT id, telegram_user_name, text, created_at FROM messages ORDER BY created_at DESC;"
 	rows, err := a.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err

@@ -28,7 +28,7 @@ type Usecase interface {
 	// Получение пользователя.
 	User(ctx context.Context, telegramUserId int) (*entities.User, error)
 	// Сообщения.
-	Messages(ctx context.Context) ([]*entities.Message, error)
+	Messages(ctx context.Context, params *entities.MessagesRequestParams) (mgs []*entities.Message, total int, err error)
 	// Обновление сообщений.
 	UpdateMessages(ctx context.Context) error
 }

@@ -211,10 +211,17 @@ func (a *App) User(ctx context.Context, telegramUserId int) (*entities.User, err
 }
 
 // Messages Сервис сообщений.
-func (a *App) Messages(ctx context.Context) ([]*entities.Message, error) {
+func (a *App) Messages(ctx context.Context, params *entities.MessagesRequestParams) (mgs []*entities.Message, total int, err error) {
 	a.muMessages.RLock()
 	defer a.muMessages.RUnlock()
-	return a.messages, nil
+	switch {
+	case params.Limit*params.Page-params.Limit > len(a.messages):
+		return []*entities.Message{}, len(a.messages), nil
+	case params.Limit*params.Page-1 > len(a.messages):
+		return a.messages[params.Limit*params.Page-params.Limit:], len(a.messages), nil
+	default:
+		return a.messages[params.Limit*params.Page-params.Limit : params.Limit*params.Page-1], len(a.messages), nil
+	}
 }
 
 // UpdateMessages Сервис обновления сообщений.

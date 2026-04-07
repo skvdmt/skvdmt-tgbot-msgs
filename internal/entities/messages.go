@@ -13,3 +13,9 @@ type Message struct {
 	Text             string    `json:"text"`
 	CreatedAt        time.Time `json:"created_at"`
 }
+
+// MessagesRequestParams параметры запроса сообщений.
+type MessagesRequestParams struct {
+	Limit int
+	Page  int
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strconv"
 	"time"
 
 	erw "github.com/skvdmt/skvdmt-back/pkg/errwrap"
@@ -26,6 +27,9 @@ const (
 
 	get          = "GET %s"
 	url_messages = "/messages"
+
+	limit = "limit"
+	page  = "page"
 )
 
 // App Транспортный слой.
@@ -231,13 +235,42 @@ func (a *App) routes() error {
 
 // messages Обработчик запроса сообщений.
 func (a *App) messages(w http.ResponseWriter, r *http.Request) {
-	mgs, err := a.usecase.Messages(r.Context())
+	const m = "messages"
+	p := &entities.MessagesRequestParams{}
+	var err error
+	p.Limit, err = strconv.Atoi(r.URL.Query().Get(limit))
+	if err != nil {
+		a.errorHandle(w, erw.New(
+			erw.CodeHTTP(http.StatusBadRequest),
+			erw.Internal(
+				erw.Location(pkg, app, m),
+				erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
+					fmt.Errorf("conversion error"), err, r.URL.Query().Get(limit))),
+			)))
+		return
+	}
+	p.Page, err = strconv.Atoi(r.URL.Query().Get(page))
+	if err != nil {
+		a.errorHandle(w, erw.New(
+			erw.CodeHTTP(http.StatusBadRequest),
+			erw.Internal(
+				erw.Location(pkg, app, m),
+				erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
+					fmt.Errorf("conversion error"), err, r.URL.Query().Get(page))),
+			)))
+		return
+	}
+	// По умолчанию первая страница
+	if p.Page == 0 {
+		p.Page = 1
+	}
+	mgs, total, err := a.usecase.Messages(r.Context(), p)
 	if err != nil {
 		a.errorHandle(w, err)
 		return
 	}
 	model.Logs.Info.Info("get messages")
-	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs}, len(mgs))
+	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs}, total)
 }
 
 // errorHandle Обработка HTTP ошибки.
