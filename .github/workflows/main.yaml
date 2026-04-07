@@ -51,6 +51,7 @@ jobs:
               --output=type=docker \
               --build-arg NAME=${{ github.event.repository.name }} \
               --build-arg DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD_URL_ENCODE }} \
+              --build-arg TGBOT_TOKEN=${{ secrets.TGBOT_TOKEN }} \
               --no-cache \
               --tag ${{ github.repository }}:testing .
             docker rmi ${{ github.repository }}:testing

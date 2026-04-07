@@ -29,7 +29,6 @@ docker pull skvdmt/skvdmt-tgbot-msgs
 ```sh
 docker run -d \
   --name msgs \
-  --env MODE=prod \
   --env TGBOT_TOKEN=bot_token \
   --env DB_PASSWORD=postgres_password \
   --restart unless-stopped \
@@ -39,7 +38,6 @@ docker run -d \
 ## Environment variable requirements:
 
 application:
-- MODE — Operating mode (available values: dev | prod);
 - TGBOT_TOKEN — Telegram bot authorization token;
 - DB_PASSWORD — Password for the postgres user;
 
