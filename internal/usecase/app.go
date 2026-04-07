@@ -220,10 +220,10 @@ func (a *App) Messages(ctx context.Context, params *entities.MessagesRequestPara
 	switch {
 	case params.Limit*params.Page-params.Limit > len(a.messages):
 		return []*entities.Message{}, len(a.messages), nil
-	case params.Limit*params.Page-1 > len(a.messages):
+	case params.Limit*params.Page > len(a.messages):
 		return a.messages[params.Limit*params.Page-params.Limit:], len(a.messages), nil
 	default:
-		return a.messages[params.Limit*params.Page-params.Limit : params.Limit*params.Page-1], len(a.messages), nil
+		return a.messages[params.Limit*params.Page-params.Limit : params.Limit*params.Page], len(a.messages), nil
 	}
 }
 
