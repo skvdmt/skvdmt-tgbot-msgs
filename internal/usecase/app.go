@@ -159,7 +159,7 @@ func (a *App) MessageHandle(ctx context.Context,
 	}
 
 	a.muMessages.Lock()
-	a.messages = append(a.messages, m)
+	a.messages = append([]*entities.Message{m}, a.messages...)
 	a.muMessages.Unlock()
 
 	user.SetMessageCreatedAt(m.CreatedAt)

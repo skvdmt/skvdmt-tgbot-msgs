@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	DB_PASSWORD     = "DB_PASSWORD"
-	POSTGRES_DRIVER = "postgres"
-	pkg             = "repository"
+	postgres          = "postgres"
+	DB_PASSWORD       = "DB_PASSWORD"
+	POSTGRES_PASSWORD = "POSTGRES_PASSWORD"
+	pkg               = "repository"
 )
 
 // App Репозиторный слой.
@@ -103,15 +104,23 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 
 // openDB Соединение с базой данных postgress.
 func (a *App) openDB() (*sql.DB, error) {
-	pwd, ok := os.LookupEnv(DB_PASSWORD)
+	penv := DB_PASSWORD
+	mode, ok := os.LookupEnv(model.MODE)
+	if ok && mode == model.Dev {
+		penv = POSTGRES_PASSWORD
+	}
+	pwd, ok := os.LookupEnv(penv)
 	if !ok {
-		return nil, fmt.Errorf("env %s not set", DB_PASSWORD)
+		return nil, fmt.Errorf("env %s unset", penv)
 	}
-	pwd, err := url.QueryUnescape(pwd)
-	if err != nil {
-		return nil, err
+	if !ok || mode != model.Dev {
+		var err error
+		pwd, err = url.QueryUnescape(pwd)
+		if err != nil {
+			return nil, err
+		}
 	}
-	db, err := sql.Open(POSTGRES_DRIVER, fmt.Sprintf(
+	db, err := sql.Open(postgres, fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		model.Config.Postgres.Host,
 		model.Config.Postgres.Port,

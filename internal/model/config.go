@@ -12,9 +12,11 @@ const (
 	APP_NAME = "skvdmt-tgbot-msgs"
 
 	// Путь в директории конфигурации. (Добавляется директория с именем приложения).
-	configDirectory = "/etc"
+	configDirectoryProd = "/etc"
+	configDirectoryDev  = "./config"
 	// Имя файла конфигурации.
-	configFileName = "config.yaml"
+	configFileNameProd = "config.yaml"
+	configFileNameDev  = "config-dev.yaml"
 	// Путь в директории с файлами шрифтов. (Добавляется директория с файла шрифта).
 	fontsDirectory = "/usr/local/share/fonts"
 )
@@ -60,6 +62,13 @@ var Config *MainConfig
 // установки указателя на нее в глобальную переменную Config.
 func LoadConfig() error {
 	Logs.Info.Info("configuration loading")
+	configDirectory := configDirectoryProd
+	configFileName := configFileNameProd
+	mode, ok := os.LookupEnv(MODE)
+	if ok && mode == Dev {
+		configDirectory = configDirectoryDev
+		configFileName = configFileNameDev
+	}
 	d, err := os.ReadFile(filepath.Join(configDirectory, APP_NAME, configFileName))
 	if err != nil {
 		return err
