@@ -95,16 +95,14 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 	var mgs []*entities.Message
 	for rows.Next() {
 		m := &entities.Message{}
-		var un *sql.NullString
+		un := &sql.NullString{}
 		if err := rows.Scan(&m.Id,
 			&un,
 			&m.Text,
 			&m.CreatedAt); err != nil {
 			return nil, err
 		}
-		if un.Valid {
-			m.TelegramUserName = un.String
-		}
+		m.TelegramUserName = un.String
 		mgs = append(mgs, m)
 	}
 	return mgs, nil
