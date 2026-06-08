@@ -58,7 +58,7 @@ func (a *App) SaveMessage(ctx context.Context, telegramUserId int, message *enti
 	_, err := a.db.ExecContext(ctx,
 		`INSERT INTO messages (telegram_user_id, telegram_user_name, text, created_at) VALUES ($1, $2, $3, $4);`,
 		telegramUserId,
-		a.nullString(message.TelegramUserName),
+		message.TelegramUserName,
 		message.Text,
 		message.CreatedAt)
 	if err != nil {
@@ -132,15 +132,4 @@ func (a *App) openDB() (*sql.DB, error) {
 	}
 	model.Logs.Info.Info("connect to database success")
 	return db, nil
-}
-
-// nullString Преобразует строку в тип sql.NullString.
-func (a *App) nullString(value string) *sql.NullString {
-	if len(value) > 0 {
-		return &sql.NullString{
-			String: value,
-			Valid:  true,
-		}
-	}
-	return &sql.NullString{}
 }
