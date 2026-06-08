@@ -25,6 +25,6 @@ fonts:
   - Oswald-Bold.ttf
   - Go-Bold.ttf
   - RobotoMono-BoldItalic.ttf
-api_server:
+server:
   base_url: ""
   port: 8000

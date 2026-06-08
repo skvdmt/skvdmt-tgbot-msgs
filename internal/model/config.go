@@ -38,8 +38,8 @@ type PostgresConfig struct {
 	Database string `yaml:"database"`
 }
 
-// APIServerConfig Конфигурация API сервера.
-type APIServerConfig struct {
+// ServerConfig Конфигурация API сервера.
+type ServerConfig struct {
 	BaseUrl string `yaml:"base_url"`
 	Port    int    `yaml:"port"`
 }
@@ -51,7 +51,7 @@ type MainConfig struct {
 	MsgsUrl                string          `yaml:"msgs-url"`
 	Timers                 *TimersConfig   `yaml:"timers"`
 	Postgres               *PostgresConfig `yaml:"postgres"`
-	APIServer              APIServerConfig `yaml:"api_server"`
+	Server                 ServerConfig    `yaml:"server"`
 	Fonts                  []string        `yaml:"fonts"`
 }
 

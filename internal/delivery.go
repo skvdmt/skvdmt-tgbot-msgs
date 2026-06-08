@@ -1,6 +1,9 @@
 package internal
 
-import "context"
+import (
+	"context"
+	"net/http"
+)
 
 // Delivery Интерфейс транспортного слоя.
 type Delivery interface {
@@ -8,4 +11,6 @@ type Delivery interface {
 	Start(ctx context.Context) error
 	// Остановка.
 	Stop(ctx context.Context) error
+	// Сообщения.
+	Messages(w http.ResponseWriter, r *http.Request)
 }

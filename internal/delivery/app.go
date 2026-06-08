@@ -3,10 +3,8 @@ package delivery
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"path"
 	"strconv"
 	"time"
 
@@ -19,15 +17,8 @@ import (
 )
 
 const (
-	defaultTimeout        = 10
-	defaultMaxHeaderBytes = 1 << 20 // 1Mb
-
-	pkg = "delivery"
-	app = "app"
-
-	get          = "GET %s"
-	url_messages = "/messages"
-
+	pkg   = "delivery"
+	app   = "app"
 	limit = "limit"
 	page  = "page"
 )
@@ -44,29 +35,16 @@ type App struct {
 	tickerOptimizeUserRegistry *time.Ticker
 	// Канал остановки системы оптимизации пользователей.
 	stopOptimizeUserRegistry chan struct{}
-	// Роутер.
-	router *http.ServeMux
-	// HTTP сервер.
-	APIServer *http.Server
 }
 
 // NewApp Конструктор.
 func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("delivery layer creating")
-	r := http.NewServeMux()
 	a := &App{
-		users:  users,
-		router: r,
+		users: users,
 		tickerOptimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
 		stopOptimizeUserRegistry: make(chan struct{}),
-		APIServer: &http.Server{
-			Addr:           fmt.Sprintf(":%d", model.Config.APIServer.Port),
-			Handler:        r,
-			ReadTimeout:    defaultTimeout * time.Second,
-			WriteTimeout:   defaultTimeout * time.Second,
-			MaxHeaderBytes: defaultMaxHeaderBytes,
-		},
 	}
 	var err error
 	// Создание клиента для запросов к Telegram Bot API.
@@ -103,26 +81,13 @@ func (a *App) Start(ctx context.Context) error {
 		}
 		model.Logs.Info.Info("update handle stopped")
 	}()
-	// Запуск API сервера для получения сообщений.
 	go func() {
-		// Настройка маршрутов.
-		model.Logs.Info.Info("API server routes creating")
-		a.routes()
 		// Обновление сообщений.
-		model.Logs.Info.Info("API server messages updating")
+		model.Logs.Info.Info("messages updating")
 		if err := a.usecase.UpdateMessages(ctx); err != nil {
 			model.Errors <- err
 			return
 		}
-		// API server starting
-		model.Logs.Info.Info(fmt.Sprintf("API server starting on %d port",
-			model.Config.APIServer.Port))
-		if err := a.APIServer.ListenAndServe(); err != nil &&
-			!errors.Is(err, http.ErrServerClosed) {
-			model.Errors <- err
-			return
-		}
-		model.Logs.Info.Info("API server stopped")
 	}()
 	return nil
 }
@@ -136,10 +101,6 @@ func (a *App) Stop(ctx context.Context) error {
 	if err := a.client.Stop(ctx); err != nil {
 		return err
 	}
-	// Выключение API сервера.
-	if err := a.APIServer.Shutdown(ctx); err != nil {
-		return err
-	}
 	// Закрытие канала остановки ресурсов.
 	close(a.stopOptimizeUserRegistry)
 	// Вызов остановки сервисного слоя.
@@ -148,6 +109,73 @@ func (a *App) Stop(ctx context.Context) error {
 	}
 	model.Logs.Info.Info("delivery layer stopped")
 	return nil
+}
+
+// messages Обработчик запроса сообщений.
+func (a *App) Messages(w http.ResponseWriter, r *http.Request) {
+	const m = "messages"
+	ps := &entities.MessagesRequestParams{}
+	var err error
+	pm := r.URL.Query().Get(limit)
+	if len(pm) > 0 {
+		ps.Limit, err = strconv.Atoi(pm)
+		if err != nil {
+			a.errorHandle(w, erw.New(
+				erw.CodeHTTP(http.StatusBadRequest),
+				erw.Internal(
+					erw.Location(pkg, app, m),
+					erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
+						fmt.Errorf("conversion error"), err, pm)),
+				)))
+			return
+		}
+	}
+	pm = r.URL.Query().Get(page)
+	if len(pm) > 0 {
+		ps.Page, err = strconv.Atoi(pm)
+		if err != nil {
+			a.errorHandle(w, erw.New(
+				erw.CodeHTTP(http.StatusBadRequest),
+				erw.Internal(
+					erw.Location(pkg, app, m),
+					erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
+						fmt.Errorf("conversion error"), err, pm)),
+				)))
+			return
+		}
+	}
+	// По умолчанию первая страница
+	if ps.Page == 0 {
+		ps.Page = 1
+	}
+	// Валидация параметров.
+	if ps.Limit < 0 {
+		a.errorHandle(w, erw.New(
+			erw.CodeHTTP(http.StatusBadRequest),
+			erw.Internal(
+				erw.Location(pkg, app, m),
+				erw.Error(fmt.Errorf("%v the limit value must not be negative",
+					fmt.Errorf("incorrect limit value: %d;", ps.Limit))),
+			)))
+		return
+	}
+	if ps.Page < 0 {
+		a.errorHandle(w, erw.New(
+			erw.CodeHTTP(http.StatusBadRequest),
+			erw.Internal(
+				erw.Location(pkg, app, m),
+				erw.Error(fmt.Errorf("%v the page value must not be negative",
+					fmt.Errorf("incorrect page value: %d;", ps.Page))),
+			)))
+		return
+	}
+	mgs, total, err := a.usecase.Messages(r.Context(), ps)
+	if err != nil {
+		a.errorHandle(w, err)
+		return
+	}
+	model.Logs.Info.Info("get messages")
+	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs}, total)
 }
 
 // handlerOptimizeUserRegistry Обработка сигналов раннеров оптимизации реестра
@@ -224,80 +252,6 @@ func (a *App) updateRequestConfig(ctx context.Context,
 // updateHaveMessage Обновление имеет сообщение.
 func (a *App) updateHaveMessage(update *entities.Update) bool {
 	return update.Message != nil
-}
-
-// routes Настройка маршрутов.
-func (a *App) routes() error {
-	bu := model.Config.APIServer.BaseUrl
-	a.router.HandleFunc(fmt.Sprintf(get, path.Join(bu, url_messages)), a.messages)
-	return nil
-}
-
-// messages Обработчик запроса сообщений.
-func (a *App) messages(w http.ResponseWriter, r *http.Request) {
-	const m = "messages"
-	ps := &entities.MessagesRequestParams{}
-	var err error
-	pm := r.URL.Query().Get(limit)
-	if len(pm) > 0 {
-		ps.Limit, err = strconv.Atoi(pm)
-		if err != nil {
-			a.errorHandle(w, erw.New(
-				erw.CodeHTTP(http.StatusBadRequest),
-				erw.Internal(
-					erw.Location(pkg, app, m),
-					erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
-						fmt.Errorf("conversion error"), err, pm)),
-				)))
-			return
-		}
-	}
-	pm = r.URL.Query().Get(page)
-	if len(pm) > 0 {
-		ps.Page, err = strconv.Atoi(pm)
-		if err != nil {
-			a.errorHandle(w, erw.New(
-				erw.CodeHTTP(http.StatusBadRequest),
-				erw.Internal(
-					erw.Location(pkg, app, m),
-					erw.Error(fmt.Errorf("%v; %v can't convert %s to int",
-						fmt.Errorf("conversion error"), err, pm)),
-				)))
-			return
-		}
-	}
-	// По умолчанию первая страница
-	if ps.Page == 0 {
-		ps.Page = 1
-	}
-	// Валидация параметров.
-	if ps.Limit < 0 {
-		a.errorHandle(w, erw.New(
-			erw.CodeHTTP(http.StatusBadRequest),
-			erw.Internal(
-				erw.Location(pkg, app, m),
-				erw.Error(fmt.Errorf("%v the limit value must not be negative",
-					fmt.Errorf("incorrect limit value: %d;", ps.Limit))),
-			)))
-		return
-	}
-	if ps.Page < 0 {
-		a.errorHandle(w, erw.New(
-			erw.CodeHTTP(http.StatusBadRequest),
-			erw.Internal(
-				erw.Location(pkg, app, m),
-				erw.Error(fmt.Errorf("%v the page value must not be negative",
-					fmt.Errorf("incorrect page value: %d;", ps.Page))),
-			)))
-		return
-	}
-	mgs, total, err := a.usecase.Messages(r.Context(), ps)
-	if err != nil {
-		a.errorHandle(w, err)
-		return
-	}
-	model.Logs.Info.Info("get messages")
-	a.sendJSON(w, http.StatusOK, map[string][]*entities.Message{"messages": mgs}, total)
 }
 
 // errorHandle Обработка HTTP ошибки.

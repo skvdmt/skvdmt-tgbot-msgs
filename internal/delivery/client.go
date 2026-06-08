@@ -3,11 +3,11 @@ package delivery
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/dto"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
@@ -25,8 +25,6 @@ const (
 	// Название переменной окружения, которая должна
 	// содержать токен авторизации с телеграм ботом.
 	TGBOT_TOKEN = "TGBOT_TOKEN"
-	// Текст ошибки отмены контекста.
-	ErrContextCanceled = "context canceled"
 )
 
 // Client Клиент для запросов к Telegram Bot API
@@ -91,8 +89,8 @@ func (c *Client) getUpdates(ctx context.Context) {
 		default:
 			res, err := c.Do(ctx, c.ConfigGetUpdates)
 			if err != nil {
-				// Игнорирование ошибки при отмене контекста.
-				if strings.HasSuffix(err.Error(), ErrContextCanceled) {
+				if errors.Is(err, context.Canceled) {
+					<-c.stopGetUpdates
 					return
 				}
 				model.Errors <- err
