@@ -150,7 +150,7 @@ func (a *App) MessageHandle(ctx context.Context,
 	}
 	m := &entities.Message{
 		Id:               uuid.New(),
-		TelegramUserName: a.nullString(user.TelegramUsername()),
+		TelegramUserName: user.TelegramUsername(),
 		Text:             update.Message.Text,
 		CreatedAt:        time.Now(),
 	}
@@ -244,15 +244,4 @@ func (a *App) UpdateMessages(ctx context.Context) error {
 	a.messages = mgs
 	a.muMessages.Unlock()
 	return nil
-}
-
-// nullString Преобразует строку в тип sql.NullString.
-func (a *App) nullString(value string) *sql.NullString {
-	if len(value) > 0 {
-		return &sql.NullString{
-			String: value,
-			Valid:  true,
-		}
-	}
-	return &sql.NullString{}
 }

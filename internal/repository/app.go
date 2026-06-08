@@ -55,10 +55,14 @@ func (a *App) Stop(ctx context.Context) error {
 
 // SaveMessage Сохранение сообщения.
 func (a *App) SaveMessage(ctx context.Context, telegramUserId int, message *entities.Message) error {
+	un := &sql.NullString{
+		String: message.TelegramUserName,
+		Valid:  len(message.TelegramUserName) > 0,
+	}
 	_, err := a.db.ExecContext(ctx,
 		`INSERT INTO messages (telegram_user_id, telegram_user_name, text, created_at) VALUES ($1, $2, $3, $4);`,
 		telegramUserId,
-		message.TelegramUserName,
+		un,
 		message.Text,
 		message.CreatedAt)
 	if err != nil {
@@ -91,12 +95,14 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 	var mgs []*entities.Message
 	for rows.Next() {
 		m := &entities.Message{}
+		var un *sql.NullString
 		if err := rows.Scan(&m.Id,
-			&m.TelegramUserName,
+			&un,
 			&m.Text,
 			&m.CreatedAt); err != nil {
 			return nil, err
 		}
+		m.TelegramUserName = un.String
 		mgs = append(mgs, m)
 	}
 	return mgs, nil
