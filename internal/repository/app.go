@@ -102,7 +102,9 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 			&m.CreatedAt); err != nil {
 			return nil, err
 		}
-		m.TelegramUserName = un.String
+		if un.Valid {
+			m.TelegramUserName = un.String
+		}
 		mgs = append(mgs, m)
 	}
 	return mgs, nil
