@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS messages (
     id UUID NOT NULL DEFAULT uuidv7(),
     telegram_user_id BIGINT NOT NULL,
-    telegram_user_name VARCHAR(32) DEFAULT NULL,
+    telegram_user_name VARCHAR(32) NOT NULL,
     text TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     PRIMARY KEY (id)
@@ -13,8 +13,6 @@ COMMENT ON COLUMN messages.telegram_user_id IS 'Идентификатор teleg
 COMMENT ON COLUMN messages.telegram_user_name IS 'Имя telegram пользователя';
 COMMENT ON COLUMN messages.text IS 'Текст сообщения';
 COMMENT ON COLUMN messages.created_at IS 'дата и время создания записи';
-
-INSERT INTO messages(telegram_user_id, telegram_user_name, text, created_at) VALUES(111, 'skidanovdima', 'old test message', '2026-04-04 12:20:34');
 
 INSERT INTO messages(telegram_user_id, telegram_user_name, text) VALUES(111, 'sunt', 'quia et suscipit
 suscipit recusandae consequuntur expedita et cum
@@ -188,5 +186,3 @@ INSERT INTO messages(telegram_user_id, telegram_user_name, text) VALUES(111, 'el
 illum et dolorum harum et voluptate eaque quidem
 exercitationem quos nam commodi possimus cum odio nihil nulla
 dolorum exercitationem magnam ex et a et distinctio debitis');
-
-INSERT INTO messages(telegram_user_id, telegram_user_name, text, created_at) VALUES(111, 'skidanovdima', 'new test message', '2026-06-08 12:20:34');
