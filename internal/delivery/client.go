@@ -3,7 +3,6 @@ package delivery
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,8 +29,6 @@ const (
 // Client Клиент для запросов к Telegram Bot API
 // и получения на них ответов.
 type Client struct {
-	// Канал сигнала остановки получения обновлений.
-	stopGetUpdates chan struct{}
 	// HTTP клиент, через который делаются запросы.
 	client *http.Client
 	// Token для авторизации.
@@ -51,7 +48,6 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("env %s not set", TGBOT_TOKEN)
 	}
 	c := &Client{
-		stopGetUpdates:   make(chan struct{}),
 		client:           &http.Client{},
 		Updates:          make(chan *entities.Update),
 		token:            tkn,
@@ -69,10 +65,6 @@ func (c *Client) Start(ctx context.Context) error {
 
 // Stop Остановка.
 func (c *Client) Stop(ctx context.Context) error {
-	c.stopGetUpdates <- struct{}{}
-	model.Logs.Info.Info("getting updates stopped")
-	// Закрытие канала остановки получения обновлений.
-	close(c.stopGetUpdates)
 	// Закрытие канал обновлений.
 	close(c.Updates)
 	model.Logs.Info.Info("client stopped")
@@ -83,32 +75,24 @@ func (c *Client) Stop(ctx context.Context) error {
 func (c *Client) getUpdates(ctx context.Context) {
 	model.Logs.Info.Info("getting updates started")
 	for {
-		select {
-		case <-c.stopGetUpdates:
+		res, err := c.Do(ctx, c.ConfigGetUpdates)
+		if err != nil {
+			model.Logs.Info.Info("getting updates stopped")
+			model.Errors <- err
 			return
-		default:
-			res, err := c.Do(ctx, c.ConfigGetUpdates)
-			if err != nil {
-				if errors.Is(err, context.Canceled) {
-					<-c.stopGetUpdates
-					return
-				}
-				model.Errors <- err
-				return
+		}
+		uts := []entities.Update{}
+		if err := json.Unmarshal(res, &uts); err != nil {
+			model.Errors <- err
+			return
+		}
+		for _, u := range uts {
+			// Установка параметра params.Offset на получение
+			// следующего update в конфигурации запросов обновлений.
+			if u.Id >= c.ConfigGetUpdates.Offset {
+				c.ConfigGetUpdates.Offset = u.Id + 1
 			}
-			uts := []entities.Update{}
-			if err := json.Unmarshal(res, &uts); err != nil {
-				model.Errors <- err
-				return
-			}
-			for _, u := range uts {
-				// Установка параметра params.Offset на получение
-				// следующего update в конфигурации запросов обновлений.
-				if u.Id >= c.ConfigGetUpdates.Offset {
-					c.ConfigGetUpdates.Offset = u.Id + 1
-				}
-				c.Updates <- &u
-			}
+			c.Updates <- &u
 		}
 	}
 }
