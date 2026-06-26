@@ -51,7 +51,7 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("env %s not set", TGBOT_TOKEN)
 	}
 	c := &Client{
-		stopGetUpdates:   make(chan struct{}),
+		stopGetUpdates:   make(chan struct{}, 1),
 		client:           &http.Client{},
 		Updates:          make(chan *entities.Update),
 		token:            tkn,

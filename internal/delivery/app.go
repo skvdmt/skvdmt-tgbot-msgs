@@ -44,7 +44,7 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 		users: users,
 		tickerOptimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
-		stopOptimizeUserRegistry: make(chan struct{}),
+		stopOptimizeUserRegistry: make(chan struct{}, 1),
 	}
 	var err error
 	// Создание клиента для запросов к Telegram Bot API.
