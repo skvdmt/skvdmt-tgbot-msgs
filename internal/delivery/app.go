@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	erw "github.com/skvdmt/skvdmt-back/pkg/errwrap"
@@ -35,6 +36,8 @@ type App struct {
 	tickerOptimizeUserRegistry *time.Ticker
 	// Канал остановки системы оптимизации пользователей.
 	stopOptimizeUserRegistry chan struct{}
+	// Корректное завершение горутин.
+	wg *sync.WaitGroup
 }
 
 // NewApp Конструктор.
@@ -42,6 +45,7 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 	model.Logs.Info.Info("delivery layer creating")
 	a := &App{
 		users: users,
+		wg:    &sync.WaitGroup{},
 		tickerOptimizeUserRegistry: time.NewTicker(time.Minute *
 			time.Duration(model.Config.Timers.OptimizeUserRegistryInterval)),
 		stopOptimizeUserRegistry: make(chan struct{}, 1),
@@ -64,11 +68,15 @@ func NewApp(ctx context.Context, users *entities.UserRegistry) (*App, error) {
 func (a *App) Start(ctx context.Context) error {
 	model.Logs.Info.Info("delivery layer starting")
 	// Запуск ресурса обработка оптимизации реестра пользователей.
+	a.wg.Add(1)
 	go func() {
+		defer a.wg.Done()
 		a.handlerOptimizeUserRegistry(ctx)
 	}()
 	// Запуск клиента для запросов к боту и чтениее обновлений.
+	a.wg.Add(1)
 	go func() {
+		defer a.wg.Done()
 		if err := a.client.Start(ctx); err != nil {
 			model.Errors <- err
 			return
@@ -81,8 +89,10 @@ func (a *App) Start(ctx context.Context) error {
 		}
 		model.Logs.Info.Info("update handle stopped")
 	}()
+	a.wg.Add(1)
 	go func() {
 		// Обновление сообщений.
+		defer a.wg.Done()
 		model.Logs.Info.Info("messages updating")
 		if err := a.usecase.UpdateMessages(ctx); err != nil {
 			model.Errors <- err
@@ -95,18 +105,16 @@ func (a *App) Start(ctx context.Context) error {
 // Stop Остановка.
 func (a *App) Stop(ctx context.Context) error {
 	// Остановка системы оптимизации пользователей.
-	a.stopOptimizeUserRegistry <- struct{}{}
-	model.Logs.Info.Info("handler optimize user registry stopped")
+	close(a.stopOptimizeUserRegistry)
 	// Остановка клиента делающего запросы к Telegram Bot API.
 	if err := a.client.Stop(ctx); err != nil {
 		return err
 	}
-	// Закрытие канала остановки ресурсов.
-	close(a.stopOptimizeUserRegistry)
 	// Вызов остановки сервисного слоя.
 	if err := a.usecase.Stop(ctx); err != nil {
 		return err
 	}
+	a.wg.Wait()
 	model.Logs.Info.Info("delivery layer stopped")
 	return nil
 }
@@ -185,6 +193,7 @@ func (a *App) handlerOptimizeUserRegistry(ctx context.Context) {
 	for {
 		select {
 		case <-a.stopOptimizeUserRegistry:
+			model.Logs.Info.Info("handler optimize user registry stopped")
 			return
 		case <-a.tickerOptimizeUserRegistry.C:
 			if err := a.usecase.OptimizeUserRegistry(ctx); err != nil {

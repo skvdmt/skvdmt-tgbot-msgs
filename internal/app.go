@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"sync"
 	"syscall"
 	"time"
 
@@ -40,6 +41,8 @@ type App struct {
 	eg []error
 	// Приложение уже закрывается.
 	stopping bool
+	// Корректное завершение горутин.
+	wg *sync.WaitGroup
 }
 
 const (
@@ -71,6 +74,7 @@ func NewApp() (*App, error) {
 			WriteTimeout:   defaultTimeout * time.Second,
 			MaxHeaderBytes: defaultMaxHeaderBytes,
 		},
+		wg: &sync.WaitGroup{},
 	}
 	// Создание контекста.
 	a.ctx, a.cancel = context.WithCancel(context.Background())
@@ -94,8 +98,10 @@ func (a *App) Start() error {
 
 	model.Logs.Info.Info("telegram bot application running")
 
+	a.wg.Add(1)
 	go func() {
 		// Настройка и запуск сервера.
+		defer a.wg.Done()
 		a.routes()
 		model.Logs.Info.Info(fmt.Sprintf("http server starting on %d port",
 			model.Config.Server.Port))
@@ -105,8 +111,10 @@ func (a *App) Start() error {
 		}
 	}()
 
+	a.wg.Add(1)
 	go func() {
 		// Запуск слоев приложения по цепочке.
+		defer a.wg.Done()
 		if err := a.delivery.Start(a.ctx); err != nil {
 			model.Errors <- err
 		}
@@ -173,6 +181,7 @@ func (a *App) stop() error {
 	if err := a.delivery.Stop(a.ctx); err != nil {
 		return err
 	}
+	a.wg.Wait()
 	// Закрытие канала отслеживающего сигналы
 	// прерывания операционной системы.
 	close(a.interrupt)

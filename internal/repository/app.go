@@ -17,7 +17,6 @@ const (
 	postgres          = "postgres"
 	DB_PASSWORD       = "DB_PASSWORD"
 	POSTGRES_PASSWORD = "POSTGRES_PASSWORD"
-	pkg               = "repository"
 )
 
 // App Репозиторный слой.
