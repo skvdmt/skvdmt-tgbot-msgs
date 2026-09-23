@@ -56,6 +56,6 @@ Application settings in [config file](./config/config.yaml)
 ## Links:
 - [Docker image](https://hub.docker.com/r/skvdmt/skvdmt-tgbot-msgs) — Docker image on docker hub.
 - [Example](https://t.me/skidanovdima_msgs_bot) An example of a working Telegram bot.
-- [Sources](https://github.com/skvdmt/skvdmt-msgs-front/) — Frontend application for displaying messages sent to the bot.
-- [Sources](https://github.com/skvdmt/skvdmt-msgs-back/) — Backend API application for displaying messages sent to the bot.
+- [Sources](https://github.com/skvdmt/msgs-skvdmt-front) — Frontend application for displaying messages sent to the bot.
+- [Sources](https://github.com/skvdmt/skvdmt-tgbot-msgs) — Backend API application for displaying messages sent to the bot.
 - [Author](https://skvdmt.ru) — Skidanov Dmitry.

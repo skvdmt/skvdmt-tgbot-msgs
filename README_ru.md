@@ -54,6 +54,6 @@ docker run -d \
 ## Ссылки:
 - [Docker image](https://hub.docker.com/r/skvdmt/skvdmt-tgbot-msgs) — Собраный образ приложения на docker hub.
 - [Example](https://t.me/skidanovdima_msgs_bot) — Пример работающего телеграм бота.
-- [Исходник](https://github.com/skvdmt/skvdmt-msgs-front/) — Фронтенд приложение для отображения сообщений, отправленных боту.
-- [Исходник](https://github.com/skvdmt/skvdmt-msgs-back/) — Бекенд API приложение для отображения сообщений, отправленных боту.
+- [Исходник](https://github.com/skvdmt/msgs-skvdmt-front) — Фронтенд приложение для отображения сообщений, отправленных боту.
+- [Исходник](https://github.com/skvdmt/skvdmt-tgbot-msgs) — Бекенд API приложение для отображения сообщений, отправленных боту.
 - [Author](https://skvdmt.ru) — Skidanov Dmitry.
