@@ -12,7 +12,6 @@ const (
 	replyToMessageID  = "reply_to_message_id"
 	text              = "text"
 	methodSendMessage = "sendMessage"
-	urlValues         = "url_values"
 )
 
 // SendMessage params for send message request

@@ -68,7 +68,7 @@ func (c *Client) Start(ctx context.Context) error {
 }
 
 // Stop Остановка.
-func (c *Client) Stop(ctx context.Context) error {
+func (c *Client) Stop(_ context.Context) error {
 	c.stopGetUpdates <- struct{}{}
 	model.Logs.Info.Info("getting updates stopped")
 	// Закрытие канала остановки получения обновлений.
@@ -96,7 +96,7 @@ func (c *Client) getUpdates(ctx context.Context) {
 				model.Errors <- err
 				return
 			}
-			uts := []entities.Update{}
+			var uts []entities.Update
 			if err := json.Unmarshal(res, &uts); err != nil {
 				model.Errors <- err
 				return

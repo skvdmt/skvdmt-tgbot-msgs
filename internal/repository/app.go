@@ -28,7 +28,7 @@ type App struct {
 }
 
 // NewApp Конструктор.
-func NewApp(ctx context.Context) (*App, error) {
+func NewApp(_ context.Context) (*App, error) {
 	model.Logs.Info.Info("repository layer creating")
 	a := &App{
 		name: "App",
@@ -43,7 +43,7 @@ func NewApp(ctx context.Context) (*App, error) {
 }
 
 // Stop Остановка.
-func (a *App) Stop(ctx context.Context) error {
+func (a *App) Stop(_ context.Context) error {
 	if err := a.db.Close(); err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 	return mgs, nil
 }
 
-// openDB Соединение с базой данных postgress.
+// openDB Соединение с базой данных postgres.
 func (a *App) openDB() (*sql.DB, error) {
 	penv := DB_PASSWORD
 	mode, ok := os.LookupEnv(model.MODE)
@@ -112,7 +112,7 @@ func (a *App) openDB() (*sql.DB, error) {
 	if !ok {
 		return nil, fmt.Errorf("env %s unset", penv)
 	}
-	if !ok || mode != model.Dev {
+	if mode != model.Dev {
 		var err error
 		pwd, err = url.QueryUnescape(pwd)
 		if err != nil {

@@ -56,8 +56,8 @@ const (
 // NewApp Конструктор.
 func NewApp() (*App, error) {
 	model.Logs.Info.Info("telegram bot application creating")
-	// Загрузка конфигурации.
-	if err := model.LoadConfig(); err != nil {
+	// Создание конфигурации.
+	if err := model.CreateConfig(); err != nil {
 		return nil, err
 	}
 	// Создане глобального канала ошибок для всего приложения.

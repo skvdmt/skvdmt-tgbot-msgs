@@ -39,8 +39,8 @@ func (s *SendCaptcha) Method() string {
 func (s *SendCaptcha) Body() (io.Reader, error) {
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
-	defer func() error {
-		return w.Close()
+	defer func() {
+		_ = w.Close()
 	}()
 	part, err := w.CreateFormField(chatId)
 	if err != nil {

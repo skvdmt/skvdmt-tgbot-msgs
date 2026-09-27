@@ -15,8 +15,8 @@ const (
 	configDirectoryProd = "/etc"
 	configDirectoryDev  = "./config"
 	// Имя файла конфигурации.
-	configFileNameProd = "config.yaml"
-	configFileNameDev  = "config-dev.yaml"
+	configFileNameProd = "prod.yaml"
+	configFileNameDev  = "dev.yaml"
 	// Путь в директории с файлами шрифтов. (Добавляется директория с файла шрифта).
 	fontsDirectory = "/usr/local/share/fonts"
 )
@@ -58,18 +58,18 @@ type MainConfig struct {
 // Cfg Глобальная конфигурация приложения.
 var Config *MainConfig
 
-// LoadConfig Загрузка основной конфигурации приложения и
+// CreateConfig Создание основной конфигурации приложения и
 // установки указателя на нее в глобальную переменную Config.
-func LoadConfig() error {
+func CreateConfig() error {
 	Logs.Info.Info("configuration loading")
-	configDirectory := configDirectoryProd
-	configFileName := configFileNameProd
-	mode, ok := os.LookupEnv(MODE)
-	if ok && mode == Dev {
-		configDirectory = configDirectoryDev
-		configFileName = configFileNameDev
+	dn := filepath.Join(configDirectoryProd, APP_NAME)
+	fn := configFileNameProd
+	m, ok := os.LookupEnv(MODE)
+	if ok && m == Dev {
+		dn = configDirectoryDev
+		fn = configFileNameDev
 	}
-	d, err := os.ReadFile(filepath.Join(configDirectory, APP_NAME, configFileName))
+	d, err := os.ReadFile(filepath.Join(dn, fn))
 	if err != nil {
 		return err
 	}

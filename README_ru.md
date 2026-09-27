@@ -16,7 +16,7 @@
 
 # Скачать исходный код
 ```sh
-git clone https://github.com/skvdmt/skvdmt-tgbot-msgs .
+git clone https://github.com/skvdmt/skvdmt-tgbot-msgs
 ```
 # Скачать Docker image
 ```sh

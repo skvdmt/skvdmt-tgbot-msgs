@@ -18,10 +18,10 @@ const (
 	BotWantDefault = BotWantCommand
 
 	// Описание ошибок.
-	ErrAlreadyAuthorized    = "user already authorized"
-	ErrAuthAttemptsLeft     = "auth attempts left"
-	ErrNotAuthorized        = "user not authorized"
-	ErrMessageAlreadySended = "message already sended"
+	ErrAlreadyAuthorized  = "user already authorized"
+	ErrAuthAttemptsLeft   = "auth attempts left"
+	ErrNotAuthorized      = "user not authorized"
+	ErrMessageAlreadySent = "message already sent"
 )
 
 // User Пользователь взаимодействующий с ботом.
@@ -38,7 +38,7 @@ type User struct {
 	// Количество оставшихся попыток авторизации.
 	authAttemptsLeft uint
 
-	// Врямя начала восстановления попыток авторизации.
+	// Время начала восстановления попыток авторизации.
 	authCooldownStartedAt time.Time
 
 	// Информация, которую бот ожидает от пользователя.
@@ -185,7 +185,7 @@ func (u *User) CanSendMessage() (ok bool, cause error) {
 		u.messageCreatedAt = time.Time{}
 	}
 	if !u.messageCreatedAt.IsZero() {
-		return false, fmt.Errorf(ErrMessageAlreadySended)
+		return false, fmt.Errorf(ErrMessageAlreadySent)
 	}
 	return true, nil
 }
@@ -201,7 +201,7 @@ func (u *User) SendMessageCooldownLeft() string {
 // если пользователь авторизован
 // если у него нет попыток авторизации
 // если значение каптчи в структуре пусто
-// если не совпадает с переданым в параметре captcha
+// если не совпадает с переданным в параметре captcha
 // иначе возвращает true
 func (u *User) Auth(captcha string) bool {
 	if u.authorized {

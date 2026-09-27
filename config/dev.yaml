@@ -11,12 +11,12 @@ timers:
   send-message-cooldown: 1440
   # Время восстановления новых попыток аутентификации.
   auth-cooldown: 15
-  # Пользователи старше этого интервала будут удалятся из базы данных.
+  # Пользователи старше этого интервала будут удаляться из базы данных.
   db-clean-interval: 24 hours
   # Время простоя пользователя перед переносом из реестра в базу данных.
   used-timeout: 15
 postgres:
-  host: postgres
+  host: localhost
   port: 5432
   user: dima
   database: skvdmt-tgbot-msgs

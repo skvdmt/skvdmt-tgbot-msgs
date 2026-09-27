@@ -7,10 +7,10 @@ import (
 )
 
 func TestCaptcha(t *testing.T) {
-	if err := LoadLogger(); err != nil {
+	if err := CreateLogger(); err != nil {
 		t.Error(err)
 	}
-	if err := LoadConfig(); err != nil {
+	if err := CreateConfig(); err != nil {
 		t.Error(err)
 	}
 	i, v, err := Captcha()

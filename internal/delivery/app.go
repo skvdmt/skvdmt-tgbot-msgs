@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -73,7 +74,7 @@ func (a *App) Start(ctx context.Context) error {
 		defer a.wg.Done()
 		a.handlerOptimizeUserRegistry(ctx)
 	}()
-	// Запуск клиента для запросов к боту и чтениее обновлений.
+	// Запуск клиента для запросов к боту и чтение обновлений.
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
@@ -119,7 +120,7 @@ func (a *App) Stop(ctx context.Context) error {
 	return nil
 }
 
-// messages Обработчик запроса сообщений.
+// Messages Обработчик запроса сообщений.
 func (a *App) Messages(w http.ResponseWriter, r *http.Request) {
 	const m = "messages"
 	ps := &entities.MessagesRequestParams{}
@@ -163,7 +164,7 @@ func (a *App) Messages(w http.ResponseWriter, r *http.Request) {
 			erw.Internal(
 				erw.Location(pkg, app, m),
 				erw.Error(fmt.Errorf("%v the limit value must not be negative",
-					fmt.Errorf("incorrect limit value: %d;", ps.Limit))),
+					fmt.Errorf("incorrect limit value: %d", ps.Limit))),
 			)))
 		return
 	}
@@ -173,7 +174,7 @@ func (a *App) Messages(w http.ResponseWriter, r *http.Request) {
 			erw.Internal(
 				erw.Location(pkg, app, m),
 				erw.Error(fmt.Errorf("%v the page value must not be negative",
-					fmt.Errorf("incorrect page value: %d;", ps.Page))),
+					fmt.Errorf("incorrect page value: %d", ps.Page))),
 			)))
 		return
 	}
@@ -213,7 +214,7 @@ func (a *App) updateHandle(ctx context.Context, update *entities.Update) error {
 	user.SetTelegramUsername(update.Message.From.Username)
 
 	// Получение конфигурации запроса к телеграм боту,
-	// чтобы дать отвера на запрос пользователя.
+	// чтобы дать ответ на запрос пользователя.
 	cfg, err := a.updateRequestConfig(ctx, user, update)
 	if err != nil {
 		return err
@@ -268,7 +269,7 @@ func (a *App) errorHandle(w http.ResponseWriter, err error) {
 	const m = "errorHandle"
 	var e *erw.ErrorWrapper
 	var ok bool
-	if e, ok = err.(*erw.ErrorWrapper); !ok {
+	if ok = errors.As(err, &e); !ok {
 		e = erw.New(erw.Internal(
 			erw.Location(pkg, app, m),
 			erw.Error(fmt.Errorf(
@@ -293,5 +294,5 @@ func (a *App) sendJSON(w http.ResponseWriter, code int, value any, total int) {
 		w.Header().Set("X-Total-Count", fmt.Sprintf("%d", total))
 	}
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(value)
+	_ = json.NewEncoder(w).Encode(value)
 }

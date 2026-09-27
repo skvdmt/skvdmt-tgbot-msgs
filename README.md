@@ -17,7 +17,7 @@ The application has an API on the port specified in the configuration at /messag
 
 # Download sources
 ```sh
-git clone https://github.com/skvdmt/skvdmt-tgbot-msgs .
+git clone https://github.com/skvdmt/skvdmt-tgbot-msgs
 ```
 
 # Download docker image

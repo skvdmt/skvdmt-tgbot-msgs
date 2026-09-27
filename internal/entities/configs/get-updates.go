@@ -20,7 +20,7 @@ const (
 	urlEncoded           = "application/x-www-form-urlencoded"
 )
 
-// Getupdates Конфигурация запроса на получение обновлений.
+// GetUpdates Конфигурация запроса на получение обновлений.
 type GetUpdates struct {
 	Limit          int
 	Offset         int
@@ -69,5 +69,5 @@ func (g *GetUpdates) ContentType() string {
 }
 
 // SetChatId empty
-func (g *GetUpdates) SetChatId(chatId int) {
+func (g *GetUpdates) SetChatId(_ int) {
 }

@@ -21,19 +21,19 @@ const (
 	cmdStart = "/start"
 	// Команда на запрос аутентификации.
 	cmdAuth = "/auth"
-	// Команда на запрос отправки сообщания.
+	// Команда на запрос отправки сообщения.
 	cmdMessage = "/message"
 	// Текст ошибки пользователь уже авторизован.
 	ErrAlreadyAuthorized = "user already authorized"
-	// Текст ошибки поптки авторизации закончились.
+	// Текст ошибки попытки авторизации закончились.
 	ErrAuthAttemptsLeft = "auth attempts left"
 	// Текст ошибки пользователь не авторизован.
 	ErrNotAuthorized = "user not authorized"
 	// Текст ошибки пользователь уже отправил сообщение.
-	ErrMessageAlreadySended = "message already sended"
+	ErrMessageAlreadySent = "message already sent"
 )
 
-// App Cервисный слой.
+// App Сервисный слой.
 type App struct {
 	repository Repository
 	users      *entities.UserRegistry
@@ -61,12 +61,12 @@ func (a *App) Stop(ctx context.Context) error {
 	if err := a.repository.Stop(ctx); err != nil {
 		return err
 	}
-	model.Logs.Info.Info("usercase layer stopped")
+	model.Logs.Info.Info("usecase layer stopped")
 	return nil
 }
 
 // CommandHandle Обработчик команд.
-func (a *App) CommandHandle(ctx context.Context, user *entities.User, update *entities.Update) (configs.RequestConfig, error) {
+func (a *App) CommandHandle(_ context.Context, user *entities.User, update *entities.Update) (configs.RequestConfig, error) {
 	switch update.Message.Text {
 	case cmdStart:
 		return configs.NewSendMessage(fmt.Sprintf(messages.Start,
@@ -77,11 +77,11 @@ func (a *App) CommandHandle(ctx context.Context, user *entities.User, update *en
 		if !ok {
 			switch err.Error() {
 			case ErrAlreadyAuthorized:
-				user.SetBotWant(entities.BotWantCommand)
+				_ = user.SetBotWant(entities.BotWantCommand)
 				return configs.NewSendMessage(fmt.Sprintf(messages.AlreadyAuth,
 					cmdMessage)), nil
 			case ErrAuthAttemptsLeft:
-				user.SetBotWant(entities.BotWantCommand)
+				_ = user.SetBotWant(entities.BotWantCommand)
 				return configs.NewSendMessage(fmt.Sprintf(messages.AuthOver,
 					user.AuthCooldownLeft())), nil
 			default:
@@ -92,7 +92,7 @@ func (a *App) CommandHandle(ctx context.Context, user *entities.User, update *en
 		if err != nil {
 			return nil, err
 		}
-		user.SetBotWant(entities.BotWantCaptcha)
+		_ = user.SetBotWant(entities.BotWantCaptcha)
 		user.SetCaptcha(v)
 		return configs.NewSendCaptcha(fmt.Sprintf(messages.AuthTitle,
 			user.AuthAttemptsLeft()), i), nil
@@ -101,18 +101,18 @@ func (a *App) CommandHandle(ctx context.Context, user *entities.User, update *en
 		if !ok {
 			switch err.Error() {
 			case ErrNotAuthorized:
-				user.SetBotWant(entities.BotWantCommand)
+				_ = user.SetBotWant(entities.BotWantCommand)
 				return configs.NewSendMessage(fmt.Sprintf(messages.AuthIncomplete,
 					cmdAuth)), nil
-			case ErrMessageAlreadySended:
-				user.SetBotWant(entities.BotWantCommand)
+			case ErrMessageAlreadySent:
+				_ = user.SetBotWant(entities.BotWantCommand)
 				return configs.NewSendMessage(fmt.Sprintf(messages.WillSaved,
 					model.Config.MsgsUrl, user.SendMessageCooldownLeft())), nil
 			default:
 				return nil, err
 			}
 		}
-		user.SetBotWant(entities.BotWantMessage)
+		_ = user.SetBotWant(entities.BotWantMessage)
 		return configs.NewSendMessage(messages.SendMessageEnter), nil
 	default:
 		return configs.NewSendMessage(fmt.Sprintf(messages.UnknownCommand,
@@ -120,17 +120,17 @@ func (a *App) CommandHandle(ctx context.Context, user *entities.User, update *en
 	}
 }
 
-// CaptchaHanle Обработчик каптчи.
-func (a *App) CaptchaHandle(ctx context.Context,
+// CaptchaHandle Обработчик каптчи.
+func (a *App) CaptchaHandle(_ context.Context,
 	user *entities.User,
 	update *entities.Update) (configs.RequestConfig, error) {
 	if !user.Auth(update.Message.Text) {
-		user.SetBotWant(entities.BotWantCommand)
+		_ = user.SetBotWant(entities.BotWantCommand)
 		user.SetCaptcha("")
 		return configs.NewSendMessage(fmt.Sprintf(messages.AuthWrong,
 			cmdAuth)), nil
 	}
-	user.SetBotWant(entities.BotWantCommand)
+	_ = user.SetBotWant(entities.BotWantCommand)
 	return configs.NewSendMessage(fmt.Sprintf(messages.AuthComplete,
 		cmdMessage)), nil
 }
@@ -163,13 +163,13 @@ func (a *App) MessageHandle(ctx context.Context,
 	a.muMessages.Unlock()
 
 	user.SetMessageCreatedAt(m.CreatedAt)
-	user.SetBotWant(entities.BotWantCommand)
+	_ = user.SetBotWant(entities.BotWantCommand)
 	return configs.NewSendMessage(fmt.Sprintf(messages.SendMessageSaved,
 		model.Config.MsgsUrl, user.SendMessageCooldownLeft())), nil
 }
 
-// OptimizeUserRegistry Оптиизация реестра пользователей.
-func (a *App) OptimizeUserRegistry(ctx context.Context) error {
+// OptimizeUserRegistry Оптимизация реестра пользователей.
+func (a *App) OptimizeUserRegistry(_ context.Context) error {
 	fresh := make(map[int]*entities.User)
 	for k, v := range a.users.List() {
 		if time.Until(v.LastUsedAt())+
@@ -211,12 +211,9 @@ func (a *App) User(ctx context.Context, telegramUserId int) (*entities.User, err
 }
 
 // Messages Сервис сообщений.
-func (a *App) Messages(ctx context.Context, params *entities.MessagesRequestParams) (mgs []*entities.Message, total int, err error) {
+func (a *App) Messages(_ context.Context, params *entities.MessagesRequestParams) (mgs []*entities.Message, total int, err error) {
 	a.muMessages.RLock()
 	defer a.muMessages.RUnlock()
-	// for _, m := range a.messages {
-	// 	fmt.Println(m.Text)
-	// }
 	if params.Limit == 0 {
 		// Лимит не указан.
 		return a.messages, len(a.messages), nil

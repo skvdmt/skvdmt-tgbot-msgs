@@ -32,7 +32,7 @@ func (u *UserRegistry) SetList(list map[int]*User) {
 	u.list = list
 }
 
-// Exists Пользователь прусутствует в карте.
+// Exists Пользователь присутствует в карте.
 func (u *UserRegistry) Exists(telegramUserId int) bool {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
@@ -47,7 +47,7 @@ func (u *UserRegistry) Set(user *User) {
 	(*u).list[user.telegramUserId] = user
 }
 
-// Get Получет пользователя из карты.
+// Get Получает пользователя из карты.
 func (u *UserRegistry) Get(telegramUserId int) (*User, error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()

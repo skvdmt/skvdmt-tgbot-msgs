@@ -23,7 +23,7 @@ type Usecase interface {
 	MessageHandle(ctx context.Context,
 		user *entities.User,
 		update *entities.Update) (configs.RequestConfig, error)
-	// Оптиизация реестра пользователей.
+	// Оптимизация реестра пользователей.
 	OptimizeUserRegistry(ctx context.Context) error
 	// Получение пользователя.
 	User(ctx context.Context, telegramUserId int) (*entities.User, error)
