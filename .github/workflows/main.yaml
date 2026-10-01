@@ -45,13 +45,15 @@ jobs:
               --name ${{ secrets.DOCKER_NETWORK }}-builder \
               --driver docker-container \
               --driver-opt "network=${{ secrets.DOCKER_NETWORK }}" || true
+            export DB_PASSWORD="${{ secrets.POSTGRES_PASSWORD_URL_ENCODE }}"
+            export TGBOT_TOKEN="${{ secrets.TGBOT_TOKEN }}"
             docker buildx build \
               --network=host \
               --target=testing \
               --output=type=docker \
               --build-arg NAME=${{ github.event.repository.name }} \
-              --build-arg DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD_URL_ENCODE }} \
-              --build-arg TGBOT_TOKEN=${{ secrets.TGBOT_TOKEN }} \
+              --secret id=db_password,env=DB_PASSWORD \
+              --secret id=tgbot_token,env=TGBOT_TOKEN \
               --no-cache \
               --tag ${{ github.repository }}:testing .
             docker rmi ${{ github.repository }}:testing

@@ -13,11 +13,13 @@ RUN go mod download
 
 # Тестирование.
 FROM preper AS testing
-ARG DB_PASSWORD
-ARG TGBOT_TOKEN
-RUN go test --tags=unit -v ./...
-RUN go test --tags=integration -v ./...
-RUN go test --tags=e2e -v ./...
+RUN --mount=type=secret,id=db_password \
+  --mount=type=secret,id=tgbot_token \
+  export DB_PASSWORD=$(cat /run/secrets/db_password) && \
+  export TGBOT_TOKEN=$(cat /run/secrets/tgbot_token) && \
+  go test --tags=unit -v ./... && \
+  go test --tags=integration -v ./... && \
+  go test --tags=e2e -v ./...
 
 # Сборка.
 FROM preper AS building
