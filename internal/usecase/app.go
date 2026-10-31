@@ -148,11 +148,13 @@ func (a *App) MessageHandle(ctx context.Context,
 			return nil, fmt.Errorf("message are saved")
 		}
 	}
+	createdAt := time.Now()
 	m := &entities.Message{
-		Id:               uuid.New(),
-		TelegramUserName: user.TelegramUsername(),
-		Text:             update.Message.Text,
-		CreatedAt:        time.Now(),
+		Id:                uuid.New(),
+		TelegramUserName:  user.TelegramUsername(),
+		Text:              update.Message.Text,
+		CreatedAt:         createdAt,
+		CreatedAtFormated: createdAt.Format("02.01.2006, 15:04:05"),
 	}
 	if err := a.repository.SaveMessage(ctx, user.TelegramUserId(), m); err != nil {
 		return nil, err

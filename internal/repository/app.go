@@ -96,7 +96,11 @@ func (a *App) UpdateMessages(ctx context.Context) ([]*entities.Message, error) {
 			&m.CreatedAt); err != nil {
 			return nil, err
 		}
+		m.CreatedAtFormated = m.CreatedAt.Format("02.01.2006, 15:04:05")
 		mgs = append(mgs, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mgs, nil
 }
