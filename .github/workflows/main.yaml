@@ -103,6 +103,7 @@ jobs:
               --network ${{ secrets.DOCKER_NETWORK }} \
               --name ${{ github.event.repository.name }} \
               --memory="48m" \
+              --cpus="0.25" \
               --env DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD_URL_ENCODE }} \
               --env TGBOT_TOKEN=${{ secrets.TGBOT_TOKEN }} \
               --volume ${{ secrets.HOME }}/logs/${{ github.event.repository.name }}:/var/log/${{ github.event.repository.name }} \
