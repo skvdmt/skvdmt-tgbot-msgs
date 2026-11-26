@@ -11,6 +11,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/entities"
 	"github.com/skvdmt/skvdmt-tgbot-msgs/internal/model"
+	"github.com/skvdmt/skvdmt-tgbot-msgs/pkg"
 )
 
 const (
@@ -62,6 +63,11 @@ func (a *App) SaveMessage(ctx context.Context, telegramUserId int, message *enti
 		message.CreatedAt)
 	if err != nil {
 		return err
+	}
+	if os.Getenv(model.MODE) != model.Dev {
+		if err := pkg.PurgeNginxCache("https", "msgs.skvdmt.ru", "/"); err != nil {
+			model.Logs.Error.Error(err.Error())
+		}
 	}
 	model.Logs.Info.Info(fmt.Sprintf(
 		"message %s from telegram_user_id %d saved",
